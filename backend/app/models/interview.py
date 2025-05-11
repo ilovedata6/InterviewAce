@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, UUID, ForeignKey, Float, Text, DateTime
+from sqlalchemy.orm import relationship
 import uuid
 from app.models.base import Base, TimestampMixin
 
@@ -13,6 +14,10 @@ class InterviewSession(Base, TimestampMixin):
     final_score = Column(Float, nullable=True)
     feedback_summary = Column(Text, nullable=True)
 
+    # Relationships
+    resume = relationship("Resume", back_populates="interview_sessions")
+    questions = relationship("InterviewQuestion", back_populates="session")
+
 class InterviewQuestion(Base, TimestampMixin):
     __tablename__ = "interview_questions"
 
@@ -21,4 +26,7 @@ class InterviewQuestion(Base, TimestampMixin):
     question_text = Column(Text, nullable=False)
     answer_text = Column(Text, nullable=True)
     evaluation_score = Column(Float, nullable=True)
-    feedback_comment = Column(Text, nullable=True) 
+    feedback_comment = Column(Text, nullable=True)
+
+    # Relationships
+    session = relationship("InterviewSession", back_populates="questions") 
