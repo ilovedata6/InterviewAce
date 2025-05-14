@@ -17,7 +17,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    payload = verify_token(token)
+    payload = verify_token(token,db)
     if payload is None:
         raise credentials_exception
     

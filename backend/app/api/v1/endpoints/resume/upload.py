@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import os
 import shutil
-import magic
+import filetype
 from datetime import datetime, timezone
 import uuid
 
@@ -13,7 +13,6 @@ from app.models.resume import Resume
 from app.schemas.resume import ResumeUploadResponse, ResumeStatus, FileType
 from app.api.deps import get_current_user
 from app.core.config import settings
-from app.core.security import generate_share_token
 from app.services.resume_parser import parse_resume
 from app.utils.file_utils import validate_file_size, get_file_extension
 
@@ -76,11 +75,11 @@ async def process_resume_file(
         resume.extracted_data = analysis_result.get('content', {})
         resume.inferred_role = analysis_result.get('summary', {}).get('target_role')
         resume.experience_level = analysis_result.get('summary', {}).get('experience_level')
-        resume.analysis_metadata = {
-            "parser_version": settings.RESUME_PARSER_VERSION,
-            "analysis_date": datetime.now(timezone.utc).isoformat(),
-            "parser_engine": analysis_result.get('parser_engine', 'default')
-        }
+        # resume.analysis_metadata = {
+        #     "parser_version": settings.RESUME_PARSER_VERSION,
+        #     "analysis_date": datetime.now(timezone.utc).isoformat(),
+        #     "parser_engine": analysis_result.get('parser_engine', 'default')
+        # }
         
         db.commit()
     except Exception as e:
@@ -115,9 +114,11 @@ async def upload_resume(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Get file type using python-magic
-    mime = magic.Magic(mime=True)
-    file_type = mime.from_file(file_path)
+    kind = filetype.guess(file_path)
+    if kind is None:
+        file_type = 'application/octet-stream'
+    else:
+        file_type = kind.mime
     
     # Create resume record
     resume = Resume(
@@ -130,8 +131,7 @@ async def upload_resume(
         file_type=FileType(file_type),
         status=ResumeStatus.PENDING,
         version=1,
-        parent_version_id=None,
-        analysis_metadata={"parser_version": "1.0"}
+        parent_version_id=None
     )
     
     db.add(resume)

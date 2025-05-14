@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, UUID, Boolean
 import uuid
+from sqlalchemy.orm import relationship
 from app.models.base import Base, TimestampMixin
 
 class User(Base, TimestampMixin):
@@ -10,3 +11,4 @@ class User(Base, TimestampMixin):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True) 
+    resumes = relationship("Resume", back_populates="user")

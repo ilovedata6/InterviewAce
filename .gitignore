@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+backend/uploads/
 eggs/
 .eggs/
 .vscode/
