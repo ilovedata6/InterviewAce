@@ -70,34 +70,52 @@ Once the server is running, visit:
 ## Project Structure
 
 ```
-backend/
-├── app/
-│   ├── api/
-│   │   ├── v1/
-│   │   │   ├── endpoints/
-│   │   │   │   ├── auth.py
-│   │   │   │   ├── resume.py
-│   │   │   │   └── interview.py
-│   │   │   └── api.py
-│   │   │   
-│   │   │   
-│   │   │   
-│   │   └── schemas/
-│   │   │       ├── user.py
-│   │   │       ├── resume.py
-│   │   │       └── interview.py
-│   │   └── core/
-│   │   │       ├── config.py
-│   │   │       └── security.py
-│   │   └── db/
-│   │   │       └── session.py
-│   │   └── models/
-│   │   │       ├── base.py
-│   │   │       ├── user.py
-│   │   │       ├── resume.py
-│   │   │       └── interview.py
-│   │   └── main.py
-│   │   └── requirements.txt
+.
+├── .gitignore
+├── README.md
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── deps.py
+│   │   │   └── v1/
+│   │   │       ├── api.py
+│   │   │       └── endpoints/
+│   │   │           ├── auth.py
+│   │   │           ├── interview.py
+│   │   │           ├── resume.py
+│   │   │           └── resume/
+│   │   │               ├── __init__.py
+│   │   │               ├── analysis.py
+│   │   │               ├── export.py
+│   │   │               ├── management.py
+│   │   │               ├── sharing.py
+│   │   │               ├── upload.py
+│   │   │               └── version.py
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   ├── middleware.py
+│   │   │   └── security.py
+│   │   ├── db/
+│   │   │   ├── init_db.py
+│   │   │   └── session.py
+│   │   ├── models/
+│   │   │   ├── base.py
+│   │   │   ├── interview.py
+│   │   │   ├── resume.py
+│   │   │   ├── security.py
+│   │   │   └── user.py
+│   │   ├── schemas/
+│   │   │   ├── auth.py
+│   │   │   ├── base.py
+│   │   │   ├── interview.py
+│   │   │   ├── resume.py
+│   │   │   ├── security.py
+│   │   │   └── user.py
+│   │   ├── services/
+│   │   │   ├── resume_exporter.py
+│   │   │   └── resume_parser.py
+│   │   └── utils/
+│   │       └── file_utils.py
 │   └── main.py
 └── requirements.txt
 ```
@@ -112,4 +130,4 @@ backend/
 
 ## License
 
-MIT License 
+MIT License

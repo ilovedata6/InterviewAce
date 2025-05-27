@@ -51,7 +51,13 @@ class Education(BaseModel):
 class ResumeBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=100, description="Title of the resume")
     description: Optional[str] = Field(None, max_length=500, description="Optional description of the resume")
-    tags: List[str] = Field(default_factory=list, max_items=10)
+    tags: List[str] = Field(default_factory=list)
+
+    @field_validator('tags')
+    def tags_max_length(cls, v):
+        if len(v) > 10:
+            raise ValueError('No more than 10 tags are allowed')
+        return v
 
 class ResumeCreate(ResumeBase):
     pass
@@ -59,7 +65,7 @@ class ResumeCreate(ResumeBase):
 class ResumeUpdate(ResumeBase):
     title: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
-    tags: Optional[List[str]] = Field(None, max_items=10)
+    tags: Optional[List[str]] = Field(default_factory=list)
 
 class ResumeAnalysis(BaseModel):
     skills: List[str] = Field(..., description="List of skills extracted from resume")
@@ -119,7 +125,14 @@ class ResumeAnalysisResponse(BaseModel):
 class ResumeShareRequest(BaseModel):
     is_public: bool = False
     expiry_days: Optional[int] = Field(None, ge=1, le=30)
-    allowed_emails: Optional[List[str]] = Field(None, max_items=10)
+    allowed_emails: Optional[List[str]] = Field(None)
+
+    @field_validator('allowed_emails')
+    @classmethod
+    def allowed_emails_max_length(cls, v):
+        if v is not None and len(v) > 10:
+            raise ValueError('No more than 10 allowed emails are permitted')
+        return v
 
 class ResumeShareResponse(BaseModel):
     share_token: str

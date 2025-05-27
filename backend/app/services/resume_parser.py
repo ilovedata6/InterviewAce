@@ -1,173 +1,216 @@
-from fastapi import UploadFile
-import time
+# app/services/resume_parser.py
+
+import os
+import json
+import logging
 from typing import Dict, Any
-import PyPDF2
+
+from dotenv import load_dotenv
+from google import genai
+from transformers import pipeline
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+import pdfplumber
 import docx
 import re
-from datetime import datetime
+from app.models.resume import Resume as ResumeModel
+from app.schemas.resume import ResumeStatus, FileType
 
-async def parse_resume(file: UploadFile) -> Dict[str, Any]:
-    """
-    Parse a resume file and extract relevant information.
-    Returns a dictionary containing the parsed information.
-    """
-    start_time = time.time()
-    
-    # Read file content based on file type
-    content = await read_file_content(file)
-    
-    # Extract information
-    analysis = {
-        "skills": extract_skills(content),
-        "experience": extract_experience(content),
-        "education": extract_education(content),
-        "summary": generate_summary(content),
-        "recommendations": generate_recommendations(content),
-        "job_titles": extract_job_titles(content),
-        "years_of_experience": calculate_years_of_experience(content),
-        "confidence_score": calculate_confidence_score(content),
-        "processing_time": time.time() - start_time
-    }
-    
-    return analysis
+logger = logging.getLogger(__name__)
 
-async def read_file_content(file: UploadFile) -> str:
-    """Read content from different file types."""
-    content = ""
-    
-    if file.content_type == "application/pdf":
-        # Read PDF
-        pdf_reader = PyPDF2.PdfReader(file.file)
-        for page in pdf_reader.pages:
-            content += page.extract_text()
-    elif file.content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
-        # Read DOCX/DOC
-        doc = docx.Document(file.file)
-        for paragraph in doc.paragraphs:
-            content += paragraph.text + "\n"
+# ─── Initialization ───────────────────────────────────────────────────────────
+load_dotenv()  # reads .env in project root
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise RuntimeError("GEMINI_API_KEY not set in environment")
+
+gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Single-instance HF NER pipeline
+hf_ner = pipeline("ner", grouped_entities=True)
+
+
+# ─── Public API ────────────────────────────────────────────────────────────────
+def parse_and_store_resume(file_path: str, user_id: int, db: Session) -> ResumeModel:
+    """
+    Orchestrates:
+      1) Text extraction
+      2) LLM parse (Gemini → fallback)
+      3) Mandatory field validation
+      4) ORM mapping & persistence
+    """
+    text = _extract_text(file_path)
+    parsed = _parse_with_gemini(text)
+    if not parsed:
+        logger.warning("Gemini parse empty or failed, using HF fallback")
+        parsed = _fallback_parse(text)
+
+    _validate_mandatory(parsed, fields=("experience", "education", "skills"))
+
+    resume = _map_to_model(parsed, user_id, file_path)
+    db.add(resume)
+    db.commit()
+    db.refresh(resume)
+    return resume
+
+
+# ─── Internal Helpers ──────────────────────────────────────────────────────────
+def _extract_text(file_path: str) -> str:
+    ext = file_path.rsplit(".", 1)[-1].lower()
+    if ext == "pdf":
+        with pdfplumber.open(file_path) as pdf:
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    elif ext == "docx":
+        doc = docx.Document(file_path)
+        return "\n".join(p.text for p in doc.paragraphs)
     else:
-        # Read text file
-        content = await file.read()
-        content = content.decode("utf-8")
-    
-    return content
+        raise ValueError(f"Unsupported extension for parsing: .{ext}")
 
-def extract_skills(content: str) -> list:
-    """Extract skills from resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP or ML to extract skills
-    common_skills = [
-        "Python", "Java", "JavaScript", "SQL", "React", "Node.js",
-        "AWS", "Docker", "Kubernetes", "Git", "Agile", "Scrum"
-    ]
-    
-    found_skills = []
-    for skill in common_skills:
-        if re.search(rf"\b{skill}\b", content, re.IGNORECASE):
-            found_skills.append(skill)
-    
-    return found_skills
 
-def extract_experience(content: str) -> list:
-    """Extract work experience from resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP to extract structured experience data
-    experience_pattern = r"(?i)(.*?)\s*(\d{4})\s*-\s*(present|\d{4})\s*(.*?)(?=\n\n|\Z)"
-    matches = re.finditer(experience_pattern, content)
-    
-    experiences = []
-    for match in matches:
-        experiences.append({
-            "company": match.group(1).strip(),
-            "start_date": datetime.strptime(match.group(2), "%Y"),
-            "end_date": None if match.group(3).lower() == "present" else datetime.strptime(match.group(3), "%Y"),
-            "description": match.group(4).strip()
-        })
-    
-    return experiences
+def _parse_with_gemini(text: str) -> Dict[str, Any]:
+    prompt = (
+            "You are a professional resume parser. Extract structured resume data from the provided raw text.\n"
+            "Return ONLY valid JSON with exactly the following fields:\n"
+            "- name (string)\n"
+            "- email (string)\n"
+            "- phone (string)\n"
+            "- summary (string)\n"
+            "- skills (array of strings)\n"
+            "- education (array of objects with: degree, university, start_date, end_date, cgpa, certification, institution, date)\n"
+            "- experience (array of objects with: job_title, company, start_date, end_date, description)\n"
+            "- job_titles (array of strings)\n"
+            "- years_of_experience (float) – calculate based on job start/end dates\n"
+            "- confidence_score (float between 0.0 and 1.0 – your parsing confidence)\n"
+            "- processing_time (float in seconds – your total processing time)\n\n"
 
-def extract_education(content: str) -> list:
-    """Extract education information from resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP to extract structured education data
-    education_pattern = r"(?i)(.*?)\s*(\d{4})\s*-\s*(present|\d{4})\s*(.*?)(?=\n\n|\Z)"
-    matches = re.finditer(education_pattern, content)
-    
-    education = []
-    for match in matches:
-        education.append({
-            "institution": match.group(1).strip(),
-            "start_date": datetime.strptime(match.group(2), "%Y"),
-            "end_date": None if match.group(3).lower() == "present" else datetime.strptime(match.group(3), "%Y"),
-            "degree": match.group(4).strip()
-        })
-    
-    return education
+            "INSTRUCTIONS:\n"
+            "• If a field is missing, use null or an empty array ([]).\n"
+            "• Do not include any explanations, markdown, or extra formatting.\n"
+            "• Return ONLY valid parsable JSON – not a code block or narrative.\n"
+            "• Use your best judgment to summarize and infer fields if not explicitly written (e.g. summary).\n\n"
 
-def generate_summary(content: str) -> str:
-    """Generate a summary of the resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP to generate a meaningful summary
-    sentences = content.split(".")
-    return " ".join(sentences[:3]) + "."
+            # Optional: Embed a mini example to reinforce structure
+            "Example:\n"
+            "{\n"
+            "  \"name\": \"Jane Doe\",\n"
+            "  \"email\": \"jane.doe@example.com\",\n"
+            "  \"phone\": \"+123456789\",\n"
+            "  \"summary\": \"Experienced Data Scientist with a strong background in machine learning and analytics.\",\n"
+            "  \"skills\": [\"Python\", \"Machine Learning\", \"SQL\"],\n"
+            "  \"education\": [\n"
+            "    {\n"
+            "      \"degree\": \"BSc Computer Science\",\n"
+            "      \"university\": \"University of Example\",\n"
+            "      \"start_date\": \"2015\",\n"
+            "      \"end_date\": \"2019\",\n"
+            "      \"cgpa\": \"3.8\",\n"
+            "      \"certification\": null,\n"
+            "      \"institution\": null,\n"
+            "      \"date\": null\n"
+            "    }\n"
+            "  ],\n"
+            "  \"experience\": [\n"
+            "    {\n"
+            "      \"job_title\": \"Data Analyst\",\n"
+            "      \"company\": \"TechCorp\",\n"
+            "      \"start_date\": \"2020\",\n"
+            "      \"end_date\": \"2023\",\n"
+            "      \"description\": \"Worked on predictive modeling and business intelligence dashboards.\"\n"
+            "    }\n"
+            "  ],\n"
+            "  \"job_titles\": [\"Data Analyst\"],\n"
+            "  \"years_of_experience\": 3.0,\n"
+            "  \"confidence_score\": 0.92,\n"
+            "  \"processing_time\": 1.5\n"
+            "}\n\n"
+            f"TEXT:\n{text}"
+)
 
-def generate_recommendations(content: str) -> list:
-    """Generate recommendations for improving the resume."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use ML to generate personalized recommendations
-    return [
-        "Add more quantifiable achievements",
-        "Include relevant certifications",
-        "Highlight key projects"
-    ]
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[prompt]
+        )
 
-def extract_job_titles(content: str) -> list:
-    """Extract potential job titles from the resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP to extract and classify job titles
-    common_titles = [
-        "Software Engineer", "Full Stack Developer", "Data Scientist",
-        "Product Manager", "DevOps Engineer", "System Administrator"
-    ]
     
-    found_titles = []
-    for title in common_titles:
-        if re.search(rf"\b{title}\b", content, re.IGNORECASE):
-            found_titles.append(title)
-    
-    return found_titles
+        raw_text = response.text if response.text is not None else ""
+        raw = raw_text.strip()
 
-def calculate_years_of_experience(content: str) -> float:
-    """Calculate total years of experience from the resume content."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use NLP to accurately calculate experience
-    experience_pattern = r"(?i)(\d{4})\s*-\s*(present|\d{4})"
-    matches = re.finditer(experience_pattern, content)
-    
-    total_years = 0
-    for match in matches:
-        start_year = int(match.group(1))
-        end_year = datetime.now().year if match.group(2).lower() == "present" else int(match.group(2))
-        total_years += end_year - start_year
-    
-    return total_years
+        cleaned = clean_gemini_json(raw_text)
+        
+        #  JSON extraction
+        return json.loads(cleaned)
+    except json.JSONDecodeError as je:
+        logger.error("JSON decode error: %s", je)
+    except Exception as e:
+        logger.error("Gemini API error: %s", e, exc_info=True)
 
-def calculate_confidence_score(content: str) -> float:
-    """Calculate confidence score for the extracted information."""
-    # This is a placeholder implementation
-    # In a real implementation, you would use ML to calculate confidence scores
-    score = 0.0
+    return {}
+
+
+def _fallback_parse(text: str) -> Dict[str, Any]:
+    """
+    Simple fallback: extract entities via HF NER and
+    bucket them into skills, job_titles, etc.
+    """
+    entities = hf_ner(text)
+    parsed = {
+        "name": None,
+        "email": None,
+        "phone": None,
+        "skills": [],
+        "education": [],
+        "experience": None,
+        "job_titles": [],
+        "years_of_experience": None
+    }
+
+    if entities:
+        for ent in entities:
+            if isinstance(ent, dict):
+                label = ent.get("entity_group")
+                word = ent.get("word")
+            else:
+                # fallback: try attribute access or skip
+                label = getattr(ent, "entity_group", None)
+                word = getattr(ent, "word", None)
+            if label == "SKILL":
+                parsed["skills"].append(word)
+            elif label == "ORG":
+                parsed["education"].append(word)
+            elif label == "PER":
+                parsed["name"] = parsed["name"] or word
+            # you can expand phone/email/date extraction here
+
+    return parsed
+
+
+def _validate_mandatory(parsed: Dict[str, Any], fields: tuple):
+    for f in fields:
+        val = parsed.get(f)
+        if not val:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Mandatory field '{f}' is missing or empty."
+            )
+
+
+def _map_to_model(parsed: Dict[str, Any], user_id: int, file_path: str) -> ResumeModel:
+    return  ResumeModel(
+    user_id=user_id,
+    title=parsed.get("name") or os.path.basename(file_path),
+    description=parsed.get("summary"),            # if you generate one
+    file_path=file_path,
+    file_name=os.path.basename(file_path),
+    file_size=os.path.getsize(file_path),
+    file_type=FileType[file_path.rsplit(".",1)[-1].upper()],
+    status=ResumeStatus.ANALYZED,
+    analysis=parsed,                               # your parsed dict
+    confidence_score=parsed.get("confidence_score"),
+    processing_time=parsed.get("processing_time"),
+)
     
-    # Check for presence of key sections
-    if re.search(r"(?i)experience|work history", content):
-        score += 0.2
-    if re.search(r"(?i)education|academic", content):
-        score += 0.2
-    if re.search(r"(?i)skills|technologies", content):
-        score += 0.2
-    if re.search(r"(?i)projects|portfolio", content):
-        score += 0.2
-    if re.search(r"(?i)summary|objective", content):
-        score += 0.2
-    
-    return min(score, 1.0) 
+
+def clean_gemini_json(raw: str) -> str:
+    return re.sub(r"```(?:json)?|```", "", raw).strip()
