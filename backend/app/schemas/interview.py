@@ -29,14 +29,17 @@ class InterviewSessionBase(BaseModel):
     final_score: Optional[float] = None
     feedback_summary: Optional[str] = None
 
-class InterviewSessionCreate(InterviewSessionBase):
-    pass
+class InterviewSessionCreate(BaseModel):
+    resume_id: UUID
 
-class InterviewSessionInDB(InterviewSessionBase):
+class InterviewSessionInDB(BaseModel):
     id: UUID
-    created_at: datetime
-    updated_at: datetime
-    questions: List[InterviewQuestionInDB] = []
+    user_id: UUID
+    resume_id: UUID
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    final_score: Optional[float] = None
+    feedback_summary: Optional[str] = None
 
     class Config:
-        from_attributes = True 
+        orm_mode = True

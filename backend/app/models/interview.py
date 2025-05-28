@@ -29,4 +29,4 @@ class InterviewQuestion(Base, TimestampMixin):
     feedback_comment = Column(Text, nullable=True)
 
     # Relationships
-    session = relationship("InterviewSession", back_populates="questions") 
+    session = relationship("InterviewSession", back_populates="questions")

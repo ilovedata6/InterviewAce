@@ -56,7 +56,10 @@ class Settings(BaseSettings):
     SESSION_TIMEOUT: int = 30  # minutes
     MAX_SESSIONS_PER_USER: int = 5
     
+    # LLM Configuration
+    LLM_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", None)
+    
     class Config:
         case_sensitive = True
 
-settings = Settings() 
+settings = Settings()

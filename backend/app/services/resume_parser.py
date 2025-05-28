@@ -139,7 +139,7 @@ def _parse_with_gemini(text: str) -> Dict[str, Any]:
         raw_text = response.text if response.text is not None else ""
         raw = raw_text.strip()
 
-        cleaned = clean_gemini_json(raw_text)
+        cleaned = clean_gemini_json(raw)
         
         #  JSON extraction
         return json.loads(cleaned)
