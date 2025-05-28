@@ -207,9 +207,11 @@ def _map_to_model(parsed: Dict[str, Any], user_id: int, file_path: str) -> Resum
     inferred_role=parsed.get("inferred_role"),
     file_name=os.path.basename(file_path),
     file_size=os.path.getsize(file_path),
+    skills=parsed.get("skills", []),
     file_type=FileType[file_path.rsplit(".",1)[-1].upper()],
     status=ResumeStatus.ANALYZED,
     analysis=parsed,                               # your parsed dict
+    years_of_experience=parsed.get("years_of_experience"),
     confidence_score=parsed.get("confidence_score"),
     processing_time=parsed.get("processing_time"),
 )

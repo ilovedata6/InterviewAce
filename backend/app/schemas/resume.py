@@ -86,6 +86,8 @@ class ResumeInDB(ResumeBase):
     file_type: FileType
     status: ResumeStatus
     inferred_role: Optional[str] = None
+    years_of_experience: Optional[float] = None
+    skills: List[str] = Field(default_factory=list, description="List of skills extracted from the resume")
     created_at: datetime
     updated_at: datetime
     analysis: Optional[ResumeAnalysis] = None

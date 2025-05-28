@@ -19,6 +19,8 @@ class Resume(Base, TimestampMixin):
     status = Column(SQLEnum(ResumeStatus), nullable=False, default=ResumeStatus.PENDING)
     analysis = Column(JSON, nullable=True)
     version = Column(Integer, nullable=False, default=1)
+    years_of_experience = Column(Integer, nullable=True)
+    skills = Column(JSON, nullable=True)  # List of skills extracted from the resume
     parent_version_id = Column(UUID(as_uuid=True), ForeignKey("resumes.id"), nullable=True)
     is_public = Column(Boolean, nullable=False, default=False)
     share_token = Column(String(64), nullable=True, unique=True)

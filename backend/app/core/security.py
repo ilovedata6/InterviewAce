@@ -78,8 +78,10 @@ def check_password_history(user_id: str, new_password: str, db: Session) -> bool
         
         # Check against all recent passwords
         for old_password in recent_passwords:
-            if verify_password(new_password, old_password.password_hash):
-                return False
+            password_hash = getattr(old_password, "hashed_password", None)
+            if password_hash is not None and isinstance(password_hash, str):
+                if verify_password(new_password, password_hash):
+                    return False
         
         return True
     except Exception as e:
@@ -134,9 +136,12 @@ def create_token(data: dict, expires_delta: timedelta) -> str:
     })
     
     try:
+        secret_key = os.getenv('SECRET_KEY')
+        if secret_key is None:
+            raise TokenException("SECRET_KEY environment variable is not set")
         encoded_jwt = jwt.encode(
             to_encode,
-            os.getenv('SECRET_KEY'),
+            secret_key,
             algorithm=settings.ALGORITHM
         )
         return encoded_jwt
@@ -146,9 +151,12 @@ def create_token(data: dict, expires_delta: timedelta) -> str:
 def verify_token(token: str, db: Session) -> Optional[dict]:
     """Verify JWT token"""
     try:
+        secret_key = os.getenv('SECRET_KEY')
+        if secret_key is None:
+            raise TokenException("SECRET_KEY environment variable is not set")
         payload = jwt.decode(
             token,
-            os.getenv('SECRET_KEY'),
+            secret_key,
             algorithms=[settings.ALGORITHM],
             audience="interview_ace_api",
             options={
@@ -172,6 +180,8 @@ def verify_token(token: str, db: Session) -> Optional[dict]:
             
         # Check if token is blacklisted
         token_id = payload.get("jti")
+        if not token_id:
+            raise TokenException("Invalid token: missing token ID")
         if check_token_revocation(token_id, db):
             raise TokenException("Token has been revoked")
             
@@ -195,6 +205,8 @@ def revoke_tokens(token: str, user_id: str, db: Session) -> None:
     try:
         # Get token payload
         payload = verify_token(token, db)
+        if not payload or not isinstance(payload, dict):
+            raise TokenException("Invalid token payload")
         token_id = payload.get("jti")
         
         if not token_id:
@@ -275,7 +287,7 @@ def create_user_session(user_id: str, ip_address: str, user_agent: Optional[str]
             ).order_by(UserSession.last_activity).first()
             
             if oldest_session:
-                oldest_session.is_active = False
+                setattr(oldest_session, "is_active", False)
                 db.commit()
         
         # Create new session
@@ -304,7 +316,7 @@ def update_session_activity(session_id: str, db: Session) -> None:
         if not session:
             raise SessionException("Session not found or inactive")
             
-        session.last_activity = datetime.now(timezone.utc)
+        setattr(session, "last_activity", datetime.now(timezone.utc))
         db.commit()
     except Exception as e:
         raise SessionException(f"Failed to update session activity: {str(e)}")
@@ -321,7 +333,7 @@ def deactivate_session(session_id: str, db: Session) -> None:
         ).first()
         
         if session:
-            session.is_active = False
+            setattr(session, "is_active", bool(False))
             session.deactivated_at = datetime.now(timezone.utc)
             db.commit()
     except Exception as e:
@@ -345,6 +357,8 @@ def get_current_user(
     """Get current user from token"""
     try:
         payload = verify_token(token, db)
+        if not payload or not isinstance(payload, dict):
+            raise AuthenticationException("Invalid token payload")
         user_id = payload.get("sub")
         if not user_id:
             raise AuthenticationException("Invalid token payload")
@@ -353,7 +367,7 @@ def get_current_user(
         if not user:
             raise AuthenticationException("User not found")
         
-        if not user.is_active:
+        if not user.is_active is True:
             raise AuthenticationException("User is inactive")
         
         return user
