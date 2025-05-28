@@ -85,6 +85,7 @@ class ResumeInDB(ResumeBase):
     file_size: int
     file_type: FileType
     status: ResumeStatus
+    inferred_role: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     analysis: Optional[ResumeAnalysis] = None

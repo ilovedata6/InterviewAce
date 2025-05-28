@@ -15,6 +15,7 @@ class Resume(Base, TimestampMixin):
     file_name = Column(String(255), nullable=False)
     file_size = Column(Integer, nullable=False)
     file_type = Column(SQLEnum(FileType), nullable=False)
+    inferred_role = Column(String(100), nullable=True)
     status = Column(SQLEnum(ResumeStatus), nullable=False, default=ResumeStatus.PENDING)
     analysis = Column(JSON, nullable=True)
     version = Column(Integer, nullable=False, default=1)

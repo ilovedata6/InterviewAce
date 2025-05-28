@@ -76,6 +76,7 @@ def _parse_with_gemini(text: str) -> Dict[str, Any]:
             "- email (string)\n"
             "- phone (string)\n"
             "- summary (string)\n"
+            "- inferred_role (string) – if not explicitly stated, infer from summary of Resume \n"
             "- skills (array of strings)\n"
             "- education (array of objects with: degree, university, start_date, end_date, cgpa, certification, institution, date)\n"
             "- experience (array of objects with: job_title, company, start_date, end_date, description)\n"
@@ -97,6 +98,7 @@ def _parse_with_gemini(text: str) -> Dict[str, Any]:
             "  \"email\": \"jane.doe@example.com\",\n"
             "  \"phone\": \"+123456789\",\n"
             "  \"summary\": \"Experienced Data Scientist with a strong background in machine learning and analytics.\",\n"
+            "\"inferred_role\": \"ML Engineer\",\n"
             "  \"skills\": [\"Python\", \"Machine Learning\", \"SQL\"],\n"
             "  \"education\": [\n"
             "    {\n"
@@ -202,6 +204,7 @@ def _map_to_model(parsed: Dict[str, Any], user_id: int, file_path: str) -> Resum
     title=parsed.get("name") or os.path.basename(file_path),
     description=parsed.get("summary"),            # if you generate one
     file_path=file_path,
+    inferred_role=parsed.get("inferred_role"),
     file_name=os.path.basename(file_path),
     file_size=os.path.getsize(file_path),
     file_type=FileType[file_path.rsplit(".",1)[-1].upper()],
