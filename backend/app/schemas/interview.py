@@ -43,3 +43,7 @@ class InterviewSessionInDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+class QuestionOut(BaseModel):
+    question_id: UUID
+    question_text: str

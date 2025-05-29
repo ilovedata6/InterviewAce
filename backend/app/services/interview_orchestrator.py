@@ -8,6 +8,8 @@ from app.db.session import get_db
 from app.core.config import settings
 from app.utils.llm_client import LLMClient
 from app.models.resume import Resume  # Assuming Resume model is in app.models.resume
+from app.models.user import User
+from fastapi import HTTPException, status
 
 import os 
 from dotenv import load_dotenv
@@ -106,3 +108,19 @@ class InterviewOrchestrator:
             self.db.add(question)
         self.db.commit()
         logger.info(f"Successfully persisted questions for session {session.id}")
+
+def get_user_session(db: Session, user: User, session_id: UUID):
+    session = db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
+    if session is None:
+        return None
+    if str(session.user_id) != str(user.id):
+        return None
+    return session
+
+def get_next_question(db: Session, session: InterviewSession):
+    return (
+        db.query(InterviewQuestion)
+        .filter(InterviewQuestion.session_id == session.id, InterviewQuestion.answer_text == None)
+        .order_by(InterviewQuestion.created_at)
+        .first()
+    )
