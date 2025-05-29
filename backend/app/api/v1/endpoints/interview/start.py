@@ -12,7 +12,7 @@ from app.models.user import User  # Import the User model
 
 router = APIRouter()
 
-@router.post("/", response_model=InterviewSessionInDB)
+@router.post("", response_model=InterviewSessionInDB)
 def start_interview_session(
     session_data: InterviewSessionCreate,
     db: Session = Depends(get_db),

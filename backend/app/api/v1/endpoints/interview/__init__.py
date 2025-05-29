@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .session import router as interview_session_router
+from .start import router as interview_session_router
 
 router = APIRouter()
 
