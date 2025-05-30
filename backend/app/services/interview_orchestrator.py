@@ -124,3 +124,15 @@ def get_next_question(db: Session, session: InterviewSession):
         .order_by(InterviewQuestion.created_at)
         .first()
     )
+
+def submit_answer(db: Session, session: InterviewSession, question_id: UUID, answer_text: str):
+    question = db.query(InterviewQuestion).filter(
+        InterviewQuestion.id == question_id,
+        InterviewQuestion.session_id == session.id
+    ).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found or not in session")
+    question.answer_text = answer_text  # type: ignore
+    db.commit()
+    next_question = get_next_question(db, session)
+    return next_question

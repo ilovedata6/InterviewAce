@@ -47,3 +47,6 @@ class InterviewSessionInDB(BaseModel):
 class QuestionOut(BaseModel):
     question_id: UUID
     question_text: str
+
+class AnswerIn(BaseModel):
+    answer_text: str
