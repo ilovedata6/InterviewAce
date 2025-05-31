@@ -50,3 +50,14 @@ class QuestionOut(BaseModel):
 
 class AnswerIn(BaseModel):
     answer_text: str
+
+class QuestionFeedback(BaseModel):
+    question_id: UUID
+    evaluation_score: float
+    feedback_comment: str
+
+class SummaryOut(BaseModel):
+    session_id: UUID
+    final_score: float
+    feedback_summary: str
+    question_feedback: List[QuestionFeedback]

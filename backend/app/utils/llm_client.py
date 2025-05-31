@@ -68,3 +68,22 @@ class LLMClient:
     #     except Exception as e:
     #         self.logger.error(f"HuggingFace fallback failed: {e}")
     #         raise
+
+    def generate_feedback(self, prompts: dict) -> dict:
+        """Generate feedback and summary using Gemini or fallback."""
+        try:
+            self.logger.info("Sending feedback prompt to Gemini API")
+            full_prompt = f"{prompts['system_prompt']}\n\n{prompts['user_prompt']}"
+            response = self.gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[{"role": "user", "parts": [{"text": full_prompt}]}]
+            )
+            raw_text = response.text if response.text is not None else ""
+            raw = raw_text.strip()
+            if not raw:
+                raise ValueError("Gemini response is empty")
+            return self.clean_gemini_json(raw)
+        except Exception as e:
+            self.logger.warning(f"Gemini API failed for feedback: {e}")
+            # Fallback logic could go here
+            raise

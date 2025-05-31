@@ -3,13 +3,14 @@ from typing import List, cast
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.interview import InterviewSession, InterviewQuestion
-from app.schemas.interview import InterviewQuestionCreate
+from app.schemas.interview import InterviewQuestionCreate, SummaryOut, QuestionFeedback
 from app.db.session import get_db
 from app.core.config import settings
 from app.utils.llm_client import LLMClient
 from app.models.resume import Resume  # Assuming Resume model is in app.models.resume
 from app.models.user import User
 from fastapi import HTTPException, status
+from datetime import datetime, timezone
 
 import os 
 from dotenv import load_dotenv
@@ -136,3 +137,73 @@ def submit_answer(db: Session, session: InterviewSession, question_id: UUID, ans
     db.commit()
     next_question = get_next_question(db, session)
     return next_question
+
+def complete_interview_session(db: Session, session: InterviewSession):
+    # Fetch all questions for the session
+    questions = db.query(InterviewQuestion).filter(InterviewQuestion.session_id == session.id).all()
+    if not questions:
+        raise HTTPException(status_code=400, detail="No questions found for this session.")
+    unanswered = [q for q in questions if q.answer_text is None]
+    if unanswered:
+        raise HTTPException(status_code=400, detail="All questions must be answered before completing the interview.")
+
+    # Build LLM prompt
+    qa_pairs = [
+        {
+            "question_id": str(q.id),
+            "question": q.question_text,
+            "answer": q.answer_text
+        }
+        for q in questions
+    ]
+    prompt = {
+        "system_prompt": "You are an expert technical interviewer. Evaluate the following interview session. For each question, provide a score (0-1) and a brief feedback. Then, summarize the candidate's strengths and weaknesses and provide an overall confidence score (0-1). Return JSON as specified.",
+        "user_prompt": f"Session Q&A: {qa_pairs}\nOUTPUT FORMAT: {{'summary': str, 'confidence_score': float, 'questions_feedback': [{{'question_id': str, 'evaluation_score': float, 'feedback_comment': str}}]}}"
+    }
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set.")
+    llm_client = LLMClient(api_key)
+    if not llm_client:
+        raise HTTPException(status_code=500, detail="LLM client initialization failed.")
+    try:
+        llm_response = llm_client.generate_feedback(prompt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM evaluation failed: {e}")
+
+    # Parse and persist feedback
+    summary = llm_response.get("summary")
+    confidence_score = llm_response.get("confidence_score")
+    questions_feedback = llm_response.get("questions_feedback", [])
+    if summary is None or confidence_score is None or not questions_feedback:
+        raise HTTPException(status_code=500, detail="LLM response missing required fields.")
+
+    # Update session
+    session.completed_at = datetime.now(timezone.utc)  # type: ignore
+    session.final_score = confidence_score
+    session.feedback_summary = summary
+    db.commit()
+
+    # Update question feedback
+    for feedback in questions_feedback:
+        qid = feedback.get("question_id")
+        q = next((q for q in questions if str(q.id) == str(qid)), None)
+        if q:
+            q.evaluation_score = feedback.get("evaluation_score")
+            q.feedback_comment = feedback.get("feedback_comment")
+    db.commit()
+
+    # Build response
+    return SummaryOut(
+        session_id=session.id,  #type:ignore
+        final_score=confidence_score,
+        feedback_summary=summary,
+        question_feedback=[
+            QuestionFeedback(
+                question_id=UUID(qf["question_id"]),
+                evaluation_score=qf["evaluation_score"],
+                feedback_comment=qf["feedback_comment"]
+            ) for qf in questions_feedback
+        ]
+    )
