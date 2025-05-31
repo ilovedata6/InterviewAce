@@ -207,3 +207,45 @@ def complete_interview_session(db: Session, session: InterviewSession):
             ) for qf in questions_feedback
         ]
     )
+
+def get_interview_summary(db: Session, session):
+    # Fetch all questions for the session
+    questions = db.query(InterviewQuestion).filter(InterviewQuestion.session_id == session.id).all()
+    if not questions:
+        raise HTTPException(status_code=404, detail="No questions found for this session.")
+
+    # Build Q&A list
+    qa_list = [
+        {
+            "question_id": str(q.id),
+            "question": q.question_text,
+            "answer": q.answer_text,
+            "evaluation_score": q.evaluation_score,
+            "feedback_comment": q.feedback_comment
+        }
+        for q in questions
+    ]
+
+    # Fetch user full name
+    user = db.query(User).filter(User.id == session.user_id).first()
+    user_full_name = getattr(user, "full_name", None) if user else None
+
+    # Compose summary
+    summary = {
+        "session_id": str(session.id),
+        "user_full_name": user_full_name,
+        "resume_id": str(session.resume_id),
+        "started_at": session.started_at.isoformat() if session.started_at else None,
+        "completed_at": session.completed_at.isoformat() if session.completed_at else None,
+        "final_score": session.final_score,
+        "feedback_summary": session.feedback_summary,
+        "questions": qa_list,
+    }
+
+    # Add strengths/weaknesses if available
+    if session.feedback_summary:
+        summary["strengths_weaknesses"] = session.feedback_summary
+    else:
+        summary["strengths_weaknesses"] = "Not available. Complete the interview to get feedback."
+
+    return summary
