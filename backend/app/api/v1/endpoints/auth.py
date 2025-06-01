@@ -56,21 +56,21 @@ async def login(
         )
     
     # Check login attempts
-    check_login_attempts(user.id, "127.0.0.1", db)  # In production, use real IP
+    check_login_attempts(str(user.id), "127.0.0.1", db)  # In production, use real IP
     
     # Verify password
-    if not verify_password(form_data.password, user.hashed_password):
-        record_login_attempt(user.id, "127.0.0.1", False, db)
+    if not verify_password(form_data.password, str(user.hashed_password)):
+        record_login_attempt(str(user.id), "127.0.0.1", False, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
     
     # Record successful login
-    record_login_attempt(user.id, "127.0.0.1", True, db)
+    record_login_attempt(str(user.id), "127.0.0.1", True, db)
     
     # Create session
-    session_id = create_user_session(user.id, "127.0.0.1", None, db)
+    session_id = create_user_session(str(user.id), "127.0.0.1", None, db)
     
     # Create tokens
     access_token, refresh_token = create_tokens({"sub": str(user.id)})
