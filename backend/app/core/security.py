@@ -254,7 +254,7 @@ def check_login_attempts(user_id: str, ip_address: str, db: Session) -> bool:
         
         return True
     except Exception as e:
-        raise AuthenticationException(f"Failed to check login attempts: {str(e)}")
+        raise AuthenticationException(f"{str(e)}")
 
 def record_login_attempt(user_id: str, ip_address: str, success: bool, db: Session) -> None:
     """Record login attempt"""
