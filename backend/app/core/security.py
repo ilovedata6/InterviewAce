@@ -372,4 +372,24 @@ def get_current_user(
         
         return user
     except Exception as e:
-        raise AuthenticationException(str(e)) 
+        raise AuthenticationException(str(e))
+
+def get_current_user_from_refresh_token(refresh_token: str, db: Session) -> User:
+    """
+    Validate the refresh token, ensure it is not revoked, and return the user.
+    """
+    payload = verify_token(refresh_token, db)
+    if not payload or not isinstance(payload, dict):
+        raise TokenException("Invalid refresh token payload")
+    if payload.get("type") != "refresh":
+        raise TokenException("Token is not a refresh token")
+    user_id = payload.get("sub")
+    if not user_id:
+        raise TokenException("Invalid refresh token: missing user id")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise TokenException("User not found")
+    # Use .is_active == True to avoid SQLAlchemy Column[bool] __bool__ error
+    if user.is_active is not True:
+        raise TokenException("User is inactive")
+    return user

@@ -73,16 +73,33 @@ Once the server is running, visit:
 .
 ├── .gitignore
 ├── README.md
+├── requirements.txt
 ├── backend/
+│   ├── main.py
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── deps.py
 │   │   │   └── v1/
 │   │   │       ├── api.py
 │   │   │       └── endpoints/
-│   │   │           ├── auth.py
-│   │   │           ├── interview.py
-│   │   │           ├── resume.py
+│   │   │           ├── auth/
+│   │   │           │   ├── __init__.py
+│   │   │           │   ├── change_password.py
+│   │   │           │   ├── login.py
+│   │   │           │   ├── logout.py
+│   │   │           │   ├── me.py
+│   │   │           │   ├── refresh.py
+│   │   │           │   ├── register.py
+|     |     |            |
+│   │   │           ├── interview/
+│   │   │           │   ├── __init__.py
+│   │   │           │   ├── answer.py
+│   │   │           │   ├── complete.py
+│   │   │           │   ├── history.py
+│   │   │           │   ├── next_question.py
+│   │   │           │   ├── session.py
+│   │   │           │   ├── start.py
+│   │   │           │   └── summary.py
 │   │   │           └── resume/
 │   │   │               ├── __init__.py
 │   │   │               ├── analysis.py
@@ -112,12 +129,14 @@ Once the server is running, visit:
 │   │   │   ├── security.py
 │   │   │   └── user.py
 │   │   ├── services/
-│   │   │   ├── resume_exporter.py
+│   │   │   ├── interview_orchestrator.py
 │   │   │   └── resume_parser.py
 │   │   └── utils/
-│   │       └── file_utils.py
-│   └── main.py
-└── requirements.txt
+│   │       ├── file_handler.py
+│   │       ├── file_utils.py
+│   │       └── llm_client.py
+└── uploads/
+    └── ...
 ```
 
 ## Contributing

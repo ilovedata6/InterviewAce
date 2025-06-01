@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     SESSION_TIMEOUT: int = 30  # minutes
     MAX_SESSIONS_PER_USER: int = 5
     
+    #SMTP Configuration
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.example.com")
+    SMTP_USERNAME:str = os.getenv("SMTP_USERNAME", "xyz@gmail.com")
+    SMTP_PASSWORD:str = os.getenv("SMTP_PASSWORD","*******")
+    SMTP_PORT:str = os.getenv("SMTP_PORT","587")
+    EMAIL_FROM:str = os.getenv("FROM_EMAIL","xyz@gmail.com")
+    
+        
     # LLM Configuration
     LLM_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", None)
     
@@ -63,3 +71,4 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 settings = Settings()
+

@@ -24,4 +24,18 @@ class UserResponse(UserBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+class ResetPasswordRequestIn(BaseModel):
+    email: EmailStr
+
+class ResetPasswordConfirmIn(BaseModel):
+    token: str
+    new_password: str  # min_length=8 will be enforced in endpoint or service
+
+class MessageOut(BaseModel):
+    message: str
