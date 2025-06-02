@@ -11,4 +11,5 @@ class User(Base, TimestampMixin):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True) 
+    is_email_verified = Column(Boolean, default=False)
     resumes = relationship("Resume", back_populates="user")

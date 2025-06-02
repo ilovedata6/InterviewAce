@@ -25,6 +25,11 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
+    if user.is_email_verified is not True:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in"
+        )
     check_login_attempts(str(user.id), "127.0.0.1", db)
     if not verify_password(form_data.password, str(user.hashed_password)):
         record_login_attempt(str(user.id), "127.0.0.1", False, db)

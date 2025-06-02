@@ -7,6 +7,8 @@ from .refresh import router as refresh_router
 from .change_password import router as change_password_router
 from .reset_password_request import router as reset_password_request_router
 from .reset_password_confirm import router as reset_password_confirm_router
+from .verify_email import router as verify_email_router
+from .resend_verification import router as resend_verification_router
 
 router = APIRouter()
 
@@ -18,3 +20,5 @@ router.include_router(refresh_router, tags=["refresh"])
 router.include_router(change_password_router, tags=["change-password"])
 router.include_router(reset_password_request_router)
 router.include_router(reset_password_confirm_router)
+router.include_router(verify_email_router)
+router.include_router(resend_verification_router)

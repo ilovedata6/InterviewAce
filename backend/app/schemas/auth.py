@@ -39,3 +39,12 @@ class ResetPasswordConfirmIn(BaseModel):
 
 class MessageOut(BaseModel):
     message: str
+
+class EmailVerificationRequest(BaseModel):
+    token: str
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+class VerificationResponse(BaseModel):
+    message: str

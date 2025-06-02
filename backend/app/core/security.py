@@ -393,3 +393,18 @@ def get_current_user_from_refresh_token(refresh_token: str, db: Session) -> User
     if user.is_active is not True:
         raise TokenException("User is inactive")
     return user
+
+def generate_email_verification_token(user_id: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    to_encode = {"sub": str(user_id), "exp": expire, "scope": "email-verification"}
+    token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return token
+
+def verify_email_verification_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("scope") != "email-verification":
+            raise ValueError("Invalid token scope")
+        return payload["sub"]
+    except JWTError:
+        raise ValueError("Invalid or expired verification token")
