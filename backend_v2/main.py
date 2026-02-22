@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.logging_config import setup_logging
@@ -9,12 +11,24 @@ from app.core.exceptions import register_exception_handlers
 # Configure structured logging before anything else
 setup_logging()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan — startup / shutdown hooks."""
+    # ── startup ────────────────────────────────────────────────────────────
+    yield
+    # ── shutdown ───────────────────────────────────────────────────────────
+    from app.infrastructure.cache.redis_client import close_redis
+    await close_redis()
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="AI-powered interview preparation platform",
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Set up all middleware (CORS, security headers, rate limiting, request ID)

@@ -13,6 +13,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 
 from app.db.session import async_engine
+from app.infrastructure.cache.redis_client import get_redis
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +33,7 @@ async def health() -> dict:
 async def ready() -> dict:
     """
     Readiness probe — returns 200 only when the application can serve
-    traffic (database reachable).
+    traffic (database + Redis reachable).
     """
     checks: dict = {}
 
@@ -44,6 +45,15 @@ async def ready() -> dict:
     except Exception as exc:
         logger.error("readiness_db_check_failed", error=str(exc))
         checks["database"] = "unavailable"
+
+    # Redis connectivity
+    try:
+        r = await get_redis()
+        await r.ping()
+        checks["redis"] = "ok"
+    except Exception as exc:
+        logger.error("readiness_redis_check_failed", error=str(exc))
+        checks["redis"] = "unavailable"
 
     overall = "ready" if all(v == "ok" for v in checks.values()) else "not_ready"
 

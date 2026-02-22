@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UPGRADES.md` — comprehensive backend upgrade plan (23 items)
 - `Planner.md` — phased implementation plan (15 phases, one feature at a time)
 - `CHANGELOG.md` — this file
+- **Redis + Rate Limiting + Token Pruning** (Phase 7):
+  - `redis>=5.0.0` and `slowapi>=0.1.9` added to requirements
+  - `app/infrastructure/cache/redis_client.py` — async Redis client singleton with `RedisTokenBlacklist` and `RedisRateLimit` helpers
+  - Replaced in-memory `RateLimitMiddleware` with `slowapi.SlowAPIMiddleware` backed by Redis
+  - Per-endpoint rate limits: login `5/min`, register `10/min`, resume upload `10/min`, password reset `3/min`
+  - Token blacklist migrated to Redis with automatic TTL expiry (DB kept as fallback + audit trail)
+  - `check_token_revocation()` now checks Redis first, falls back to DB if Redis is unavailable
+  - `revoke_tokens()` stores JTI in both Redis (with TTL) and DB (for durability)
+  - Health readiness probe (`/ready`) now checks Redis connectivity in addition to DB
+  - `main.py` uses `lifespan` context manager — graceful Redis shutdown on app exit
+- **Background Tasks — Celery** (Phase 8):
+  - `celery[redis]>=5.4.0` added to requirements
+  - `app/infrastructure/tasks/celery_app.py` — Celery app configured with Redis as broker + backend
+  - `app/infrastructure/tasks/resume_tasks.py` — `parse_resume_task` runs LLM parsing in background worker
+  - `app/infrastructure/tasks/maintenance.py` — `prune_expired_tokens` runs hourly via Celery Beat to clean stale DB rows
+  - `POST /resume/upload` now returns `202 Accepted` with `task_id` instead of blocking on LLM call
+  - `GET /api/v1/tasks/{task_id}` — poll Celery task status (PENDING → STARTED → SUCCESS/FAILURE)
+  - `ResumeUploadResponse` schema extended with optional `task_id` field
 - **Structured Logging** (Phase 5):
   - `structlog>=24.0.0` added to requirements — JSON logs in production, coloured console in development
   - `app/core/logging_config.py` — `setup_logging()` configures structlog pipeline + stdlib integration

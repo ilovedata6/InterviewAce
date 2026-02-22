@@ -197,36 +197,52 @@ async def verify_token(token: str, db: AsyncSession) -> Optional[dict]:
         raise TokenException(f"Token verification failed: {str(e)}")
 
 async def check_token_revocation(token_id: str, db: AsyncSession) -> bool:
-    """Check if token has been revoked"""
+    """Check if token has been revoked (Redis first, DB fallback)."""
     try:
-        result = await db.execute(
-            select(TokenBlacklist).where(
-                TokenBlacklist.token_id == token_id,
-                TokenBlacklist.expires_at > datetime.now(timezone.utc)
+        from app.infrastructure.cache.redis_client import RedisTokenBlacklist
+        return await RedisTokenBlacklist.is_revoked(token_id)
+    except Exception:
+        # Redis unavailable — fall back to database
+        try:
+            result = await db.execute(
+                select(TokenBlacklist).where(
+                    TokenBlacklist.token_id == token_id,
+                    TokenBlacklist.expires_at > datetime.now(timezone.utc)
+                )
             )
-        )
-        blacklisted_token = result.scalars().first()
-        return blacklisted_token is not None
-    except Exception as e:
-        raise TokenException(f"Failed to check token revocation: {str(e)}")
+            blacklisted_token = result.scalars().first()
+            return blacklisted_token is not None
+        except Exception as e:
+            raise TokenException(f"Failed to check token revocation: {str(e)}")
 
 async def revoke_tokens(token: str, user_id: str, db: AsyncSession) -> None:
-    """Revoke access and refresh tokens"""
+    """Revoke access and refresh tokens (Redis + DB)."""
     try:
         # Get token payload
         payload = await verify_token(token, db)
         if not payload or not isinstance(payload, dict):
             raise TokenException("Invalid token payload")
         token_id = payload.get("jti")
-        
+
         if not token_id:
             raise TokenException("Invalid token: missing token ID")
-        
+
         # Check if token is already blacklisted
         if await check_token_revocation(token_id, db):
             return  # Token already revoked
-        
-        # Add token to blacklist
+
+        # Calculate remaining TTL for Redis key
+        exp_ts = payload.get("exp", 0)
+        ttl = max(int(exp_ts - datetime.now(timezone.utc).timestamp()), 1)
+
+        # Store in Redis (auto-expires)
+        try:
+            from app.infrastructure.cache.redis_client import RedisTokenBlacklist
+            await RedisTokenBlacklist.revoke(token_id, ttl_seconds=ttl, reason="logout")
+        except Exception:
+            pass  # Redis down — DB record below serves as fallback
+
+        # Also store in DB for durability / audit trail
         blacklisted_token = TokenBlacklist(
             token_id=token_id,
             user_id=user_id,

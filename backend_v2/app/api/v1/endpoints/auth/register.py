@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_password_hash, generate_email_verification_token
+from app.core.middleware import limiter
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import UserCreate, UserResponse, VerificationResponse
@@ -10,7 +11,8 @@ from app.utils.email_utils import send_verification_email
 router = APIRouter()
 
 @router.post("/register", response_model=VerificationResponse)
-async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def register(request: Request, user: UserCreate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user.email))
     db_user = result.scalars().first()
     if db_user:

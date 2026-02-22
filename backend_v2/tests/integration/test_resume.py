@@ -2,7 +2,7 @@
 Integration tests for resume endpoints.
 
 Covers:
-- POST /resume/upload (with mock file and mock LLM)
+- POST /resume/upload (with mock file and Celery task mocked)
 - Error cases (no file, unauthenticated)
 """
 
@@ -30,38 +30,39 @@ class TestResumeUpload:
     async def test_upload_success_mock_llm(
         self, client: AsyncClient, auth_headers, mock_llm_provider
     ):
-        """Upload a tiny PDF-like file with the LLM mocked."""
-        # Minimal raw bytes pretending to be a PDF
+        """Upload a tiny PDF-like file — Celery task is mocked, returns 202."""
         fake_pdf = io.BytesIO(b"%PDF-1.4 fake content for testing")
         fake_pdf.name = "test_resume.pdf"
 
+        # Mock the Celery task .delay() to avoid needing a real broker
+        mock_task_result = MagicMock()
+        mock_task_result.id = "test-celery-task-id-123"
+
         with (
             patch(
-                "app.services.resume_parser.get_llm_provider",
-                return_value=mock_llm_provider,
-            ),
+                "app.api.v1.endpoints.resume.upload.parse_resume_task"
+            ) as mock_task,
             patch(
                 "app.utils.file_handler.validate_file",  # skip extension/size check
             ),
             patch(
                 "app.utils.file_handler.save_upload_file",  # don't write to disk
             ),
-            patch(
-                "app.services.resume_parser._extract_text",
-                return_value="John Doe\nSoftware Engineer\nPython, FastAPI",
-            ),
             patch("os.path.getsize", return_value=2048),
         ):
+            mock_task.delay.return_value = mock_task_result
+
             resp = await client.post(
                 API + "/",
                 headers=auth_headers,
                 files={"file": ("test_resume.pdf", fake_pdf, "application/pdf")},
             )
 
-        assert resp.status_code == 201
+        assert resp.status_code == 202
         data = resp.json()
-        assert data["status"] == "analyzed"
+        assert data["status"] == "pending"
         assert "id" in data
+        assert data["task_id"] == "test-celery-task-id-123"
 
 
 class TestResumeUploadValidation:

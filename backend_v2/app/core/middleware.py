@@ -4,11 +4,27 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 import time
 import uuid
-from typing import Dict, List
 
 import structlog
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 from app.core.config import settings
+
+logger = structlog.get_logger(__name__)
+
+# ── SlowAPI limiter (Redis-backed) ────────────────────────────────────────────
+# When REDIS_URL is available the limiter persists counts across restarts;
+# falls back to in-memory storage if Redis is unreachable.
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[f"{settings.RATE_LIMIT}/minute"],
+    storage_uri=settings.REDIS_URL,
+    strategy="fixed-window",
+)
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
@@ -29,39 +45,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers[header] = value
         return response
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp):
-        super().__init__(app)
-        self.rate_limit = settings.RATE_LIMIT
-        self.rate_limit_window = settings.RATE_LIMIT_WINDOW
-        self.requests: Dict[str, List[float]] = {}
-
-    async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host
-        current_time = time.time()
-
-        # Clean up old requests
-        if client_ip in self.requests:
-            self.requests[client_ip] = [
-                t for t in self.requests[client_ip]
-                if current_time - t < self.rate_limit_window
-            ]
-
-        # Check rate limit
-        if client_ip in self.requests and len(self.requests[client_ip]) >= self.rate_limit:
-            return Response(
-                content="Rate limit exceeded",
-                status_code=429,
-                headers={"Retry-After": str(self.rate_limit_window)}
-            )
-
-        # Record request
-        if client_ip not in self.requests:
-            self.requests[client_ip] = []
-        self.requests[client_ip].append(current_time)
-
-        response = await call_next(request)
-        return response
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
     """
@@ -87,11 +70,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Log every request/response with method, path, status and duration."""
 
     async def dispatch(self, request: Request, call_next):
-        logger = structlog.get_logger("http.access")
+        log = structlog.get_logger("http.access")
         start = time.time()
         response = await call_next(request)
         duration_ms = round((time.time() - start) * 1000, 2)
-        logger.info(
+        log.info(
             "request",
             method=request.method,
             path=str(request.url.path),
@@ -102,7 +85,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def setup_middleware(app: FastAPI):
-    # CORS middleware
+    """Wire all middleware onto the FastAPI application."""
+
+    # ── SlowAPI rate limiting (Redis-backed) ──────────────────────────────
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
+
+    # ── CORS ──────────────────────────────────────────────────────────────
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_ORIGINS,
@@ -113,9 +103,6 @@ def setup_middleware(app: FastAPI):
 
     # Security headers middleware
     app.add_middleware(SecurityHeadersMiddleware)
-
-    # Rate limiting middleware
-    app.add_middleware(RateLimitMiddleware) 
 
     # Request ID middleware (outermost — runs first)
     app.add_middleware(RequestIDMiddleware)

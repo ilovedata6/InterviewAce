@@ -1,8 +1,9 @@
 from uuid import UUID
 from typing import cast
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.middleware import limiter
 from app.db.session import get_db
 from app.schemas.auth import ResetPasswordRequestIn, MessageOut
 from app.models.user import User
@@ -16,7 +17,9 @@ router = APIRouter()
     response_model=MessageOut,
     summary="Initiate forgot-password flow"
 )
+@limiter.limit("3/minute")
 async def reset_password_request(
+    request: Request,
     payload: ResetPasswordRequestIn,
     db: AsyncSession = Depends(get_db)
 ):

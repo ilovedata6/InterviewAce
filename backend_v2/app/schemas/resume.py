@@ -107,6 +107,7 @@ class ResumeUploadResponse(BaseModel):
     message: str
     file_size: int
     file_type: FileType
+    task_id: Optional[str] = None
 
 class ResumeAnalysisResponse(BaseModel):
     resume_id: str
