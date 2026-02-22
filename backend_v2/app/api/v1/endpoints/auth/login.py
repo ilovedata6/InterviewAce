@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import (
-    create_tokens, 
-    verify_password,
-    check_login_attempts, 
-    record_login_attempt, 
-    create_user_session
-)
 from app.core.middleware import limiter
-from app.db.session import get_db
-from app.models.user import User
 from app.schemas.auth import Token
+from app.application.use_cases.auth import LoginUseCase
+from app.application.dto.auth import LoginInput
+from app.api.deps import get_login_uc
+from app.domain.exceptions import AuthenticationError, AccountLockedError
 
 router = APIRouter()
 
@@ -26,7 +19,7 @@ router = APIRouter()
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db),
+    use_case: LoginUseCase = Depends(get_login_uc),
 ):
     """Authenticate with email and password.
 
@@ -37,30 +30,31 @@ async def login(
         403: Email not yet verified.
         429: Rate limit exceeded (5 req/min).
     """
-    result = await db.execute(select(User).where(User.email == form_data.username))
-    user = result.scalars().first()
-    if not user:
+    try:
+        result = await use_case.execute(
+            LoginInput(
+                email=form_data.username,
+                password=form_data.password,
+                ip_address="127.0.0.1",
+            )
+        )
+    except AccountLockedError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail=str(e.message),
         )
-    if user.is_email_verified is not True:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in"
-        )
-    await check_login_attempts(str(user.id), "127.0.0.1", db)
-    if not verify_password(form_data.password, str(user.hashed_password)):
-        await record_login_attempt(str(user.id), "127.0.0.1", False, db)
+    except AuthenticationError as e:
+        if "verify your email" in e.message.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=e.message,
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail=e.message,
         )
-    await record_login_attempt(str(user.id), "127.0.0.1", True, db)
-    session_id = await create_user_session(str(user.id), "127.0.0.1", None, db)
-    access_token, refresh_token = create_tokens({"sub": str(user.id)})
     return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "access_token": result.access_token,
+        "refresh_token": result.refresh_token,
+        "token_type": result.token_type,
     }

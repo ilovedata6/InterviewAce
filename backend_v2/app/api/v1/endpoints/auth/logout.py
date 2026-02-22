@@ -1,14 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import (
-    get_current_user,
-    revoke_tokens,
-    deactivate_session,
-    TokenException
-)
+from app.api.deps import get_current_user, get_logout_uc
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.base import Message
+from app.application.use_cases.auth import LogoutUseCase
 
 router = APIRouter()
 
@@ -22,32 +18,20 @@ async def logout(
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    use_case: LogoutUseCase = Depends(get_logout_uc),
 ):
     """Revoke the current access/refresh token pair and deactivate the session.
 
     Raises:
         401: Missing or invalid authorization header.
     """
-    try:
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authorization header"
-            )
-        token = auth_header.split(" ")[1]
-        try:
-            await revoke_tokens(token, str(current_user.id), db)
-        except TokenException as e:
-            print(f"Warning: Token revocation failed: {str(e)}")
-        session_id = request.headers.get("X-Session-ID")
-        if session_id:
-            await deactivate_session(session_id, db)
-        return {"message": "Successfully logged out"}
-    except HTTPException:
-        raise
-    except Exception as e:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Logout failed: {str(e)}"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header"
         )
+    token = auth_header.split(" ")[1]
+    session_id = request.headers.get("X-Session-ID")
+    msg = await use_case.execute(token, current_user.id, session_id, db)
+    return {"message": msg}

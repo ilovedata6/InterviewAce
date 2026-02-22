@@ -42,7 +42,7 @@ class InterviewSessionInDB(BaseModel):
     feedback_summary: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class QuestionOut(BaseModel):
     question_id: UUID

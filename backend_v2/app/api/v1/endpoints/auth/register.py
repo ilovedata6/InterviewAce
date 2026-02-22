@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import get_password_hash, generate_email_verification_token
 from app.core.middleware import limiter
-from app.db.session import get_db
-from app.models.user import User
-from app.schemas.auth import UserCreate, UserResponse, VerificationResponse
-from app.utils.email_utils import send_verification_email
+from app.schemas.auth import UserCreate, VerificationResponse
+from app.application.use_cases.auth import RegisterUseCase
+from app.application.dto.auth import RegisterInput
+from app.api.deps import get_register_uc
+from app.domain.exceptions import DuplicateEntityError
 
 router = APIRouter()
 
@@ -20,7 +18,7 @@ router = APIRouter()
 async def register(
     request: Request,
     user: UserCreate,
-    db: AsyncSession = Depends(get_db),
+    use_case: RegisterUseCase = Depends(get_register_uc),
 ):
     """Create a new user account and send a verification email.
 
@@ -28,23 +26,17 @@ async def register(
         400: Email already registered.
         429: Rate limit exceeded (10 req/min).
     """
-    result = await db.execute(select(User).where(User.email == user.email))
-    db_user = result.scalars().first()
-    if db_user:
+    try:
+        message = await use_case.execute(
+            RegisterInput(
+                email=user.email,
+                password=user.password,
+                full_name=user.full_name,
+            )
+        )
+    except DuplicateEntityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Email already registered",
         )
-    hashed_password = get_password_hash(user.password)
-    db_user = User(
-        email=user.email,
-        hashed_password=hashed_password,
-        full_name=user.full_name
-    )
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-    # Generate verification token and send email
-    token = generate_email_verification_token(str(db_user.id))
-    send_verification_email(str(db_user.email), token)
-    return VerificationResponse(message="Registration successful. Please check your email to verify your account.")
+    return VerificationResponse(message=message)

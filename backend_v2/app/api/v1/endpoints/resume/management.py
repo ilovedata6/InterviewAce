@@ -1,23 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
-from datetime import datetime, timezone
-import os
+from typing import Optional
+from uuid import UUID
 
-from app.db.session import get_db
 from app.models.user import User
-from app.models.resume import Resume
-from app.schemas.resume import (
-    ResumeCreate,
-    ResumeUpdate,
-    ResumeResponse,
-    ResumeList,
-    ResumeStatus
-)
+from app.schemas.resume import ResumeUpdate, ResumeResponse, ResumeStatus
 from app.schemas.base import PaginatedResponse
-from app.api.deps import get_current_user
-from app.core.config import settings
+from app.api.deps import (
+    get_current_user,
+    get_list_resumes_uc,
+    get_get_resume_uc,
+    get_update_resume_uc,
+    get_delete_resume_uc,
+)
+from app.application.use_cases.resume import (
+    ListResumesUseCase,
+    GetResumeUseCase,
+    UpdateResumeUseCase,
+    DeleteResumeUseCase,
+)
+from app.application.dto.resume import ResumeListInput, ResumeUpdateInput
+from app.domain.exceptions import EntityNotFoundError
 
 router = APIRouter()
 
@@ -28,40 +30,28 @@ router = APIRouter()
     response_description="Paginated list of resumes owned by the authenticated user.",
 )
 async def list_resumes(
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(10, ge=1, le=100, description="Max records to return"),
     status_filter: Optional[ResumeStatus] = Query(None, alias="status"),
     search: Optional[str] = None,
+    use_case: ListResumesUseCase = Depends(get_list_resumes_uc),
 ):
     """List all resumes for the current user with pagination and optional filtering.
 
     Filter by `status` (PENDING, COMPLETED, FAILED) or full-text `search` on title/description.
     """
-    stmt = select(Resume).where(Resume.user_id == current_user.id)
-    count_stmt = select(func.count()).select_from(Resume).where(Resume.user_id == current_user.id)
-    
-    if status_filter:
-        stmt = stmt.where(Resume.status == status_filter)
-        count_stmt = count_stmt.where(Resume.status == status_filter)
-    
-    if search:
-        search_term = f"%{search}%"
-        search_cond = (Resume.title.ilike(search_term)) | (Resume.description.ilike(search_term))
-        stmt = stmt.where(search_cond)
-        count_stmt = count_stmt.where(search_cond)
-    
-    total_result = await db.execute(count_stmt)
-    total = total_result.scalar_one()
-    
-    result = await db.execute(
-        stmt.order_by(Resume.created_at.desc()).offset(skip).limit(limit)
+    items, total = await use_case.execute(
+        ResumeListInput(
+            user_id=current_user.id,
+            skip=skip,
+            limit=limit,
+            status_filter=status_filter.value if status_filter else None,
+            search=search,
+        )
     )
-    resumes = result.scalars().all()
-    
     return PaginatedResponse(
-        items=resumes,
+        items=items,
         total=total,
         skip=skip,
         limit=limit,
@@ -76,29 +66,21 @@ async def list_resumes(
 )
 async def get_resume(
     resume_id: str,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    use_case: GetResumeUseCase = Depends(get_get_resume_uc),
 ):
     """Get a specific resume by ID.
 
     Raises:
         404: Resume not found or not owned by the user.
     """
-    result = await db.execute(
-        select(Resume).where(
-            Resume.id == resume_id,
-            Resume.user_id == current_user.id
-        )
-    )
-    resume = result.scalars().first()
-    
-    if not resume:
+    try:
+        return await use_case.execute(current_user.id, UUID(resume_id))
+    except EntityNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            detail="Resume not found",
         )
-    
-    return resume
 
 @router.put(
     "/{resume_id}",
@@ -109,37 +91,29 @@ async def get_resume(
 async def update_resume(
     resume_id: str,
     resume_update: ResumeUpdate,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    use_case: UpdateResumeUseCase = Depends(get_update_resume_uc),
 ):
     """Update resume metadata (title, description).
 
     Raises:
         404: Resume not found or not owned by the user.
     """
-    result = await db.execute(
-        select(Resume).where(
-            Resume.id == resume_id,
-            Resume.user_id == current_user.id
+    update_data = resume_update.dict(exclude_unset=True)
+    try:
+        return await use_case.execute(
+            ResumeUpdateInput(
+                user_id=current_user.id,
+                resume_id=UUID(resume_id),
+                title=update_data.get("title"),
+                description=update_data.get("description"),
+            )
         )
-    )
-    resume = result.scalars().first()
-    
-    if not resume:
+    except EntityNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            detail="Resume not found",
         )
-    
-    # Update fields
-    for field, value in resume_update.dict(exclude_unset=True).items():
-        setattr(resume, field, value)
-    
-    resume.updated_at = datetime.now(timezone.utc)
-    await db.commit()
-    await db.refresh(resume)
-    
-    return resume
 
 @router.delete(
     "/{resume_id}",
@@ -149,32 +123,18 @@ async def update_resume(
 )
 async def delete_resume(
     resume_id: str,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    use_case: DeleteResumeUseCase = Depends(get_delete_resume_uc),
 ):
     """Delete a resume and its associated file from disk.
 
     Raises:
         404: Resume not found or not owned by the user.
     """
-    result = await db.execute(
-        select(Resume).where(
-            Resume.id == resume_id,
-            Resume.user_id == current_user.id
-        )
-    )
-    resume = result.scalars().first()
-    
-    if not resume:
+    try:
+        await use_case.execute(current_user.id, UUID(resume_id))
+    except EntityNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            detail="Resume not found",
         )
-    
-    # Delete the file
-    if os.path.exists(resume.file_path):
-        os.remove(resume.file_path)
-    
-    # Delete the database record
-    await db.delete(resume)
-    await db.commit()

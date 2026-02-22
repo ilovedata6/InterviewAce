@@ -145,3 +145,52 @@ class ResumeRepository(IResumeRepository):
             select(func.count()).select_from(Resume).where(Resume.user_id == user_id)
         )
         return result.scalar_one()
+
+    async def get_by_user_id_filtered(
+        self,
+        user_id: uuid.UUID,
+        *,
+        skip: int = 0,
+        limit: int = 50,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> List[ResumeEntity]:
+        stmt = select(Resume).where(Resume.user_id == user_id)
+        if status_filter:
+            stmt = stmt.where(Resume.status == status_filter)
+        if search:
+            term = f"%{search}%"
+            stmt = stmt.where(
+                (Resume.title.ilike(term)) | (Resume.description.ilike(term))
+            )
+        stmt = stmt.order_by(Resume.created_at.desc()).offset(skip).limit(limit)
+        result = await self._db.execute(stmt)
+        models = result.scalars().all()
+        return [self._to_entity(m) for m in models]
+
+    async def count_by_user_id_filtered(
+        self,
+        user_id: uuid.UUID,
+        *,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> int:
+        stmt = select(func.count()).select_from(Resume).where(Resume.user_id == user_id)
+        if status_filter:
+            stmt = stmt.where(Resume.status == status_filter)
+        if search:
+            term = f"%{search}%"
+            stmt = stmt.where(
+                (Resume.title.ilike(term)) | (Resume.description.ilike(term))
+            )
+        result = await self._db.execute(stmt)
+        return result.scalar_one()
+
+    async def get_latest_by_user_id(self, user_id: uuid.UUID) -> Optional[ResumeEntity]:
+        result = await self._db.execute(
+            select(Resume)
+            .where(Resume.user_id == user_id)
+            .order_by(Resume.created_at.desc())
+        )
+        model = result.scalars().first()
+        return self._to_entity(model) if model else None

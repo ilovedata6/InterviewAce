@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
 from app.schemas.auth import ResetPasswordConfirmIn, MessageOut
-from app.services.auth_service import verify_and_reset_password
+from app.application.use_cases.auth import ResetPasswordConfirmUseCase
+from app.application.dto.auth import ResetPasswordInput
+from app.api.deps import get_reset_password_confirm_uc
+from app.domain.exceptions import ValidationError
 
 router = APIRouter()
 
@@ -13,9 +14,12 @@ router = APIRouter()
 )
 async def reset_password_confirm(
     payload: ResetPasswordConfirmIn,
-    db: AsyncSession = Depends(get_db)
+    use_case: ResetPasswordConfirmUseCase = Depends(get_reset_password_confirm_uc),
 ):
-    success = await verify_and_reset_password(db, payload.token, payload.new_password)
-    if not success:
-        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
-    return MessageOut(message="Password has been reset successfully.")
+    try:
+        msg = await use_case.execute(
+            ResetPasswordInput(token=payload.token, new_password=payload.new_password)
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e.message))
+    return MessageOut(message=msg)

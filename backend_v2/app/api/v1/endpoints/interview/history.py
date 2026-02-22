@@ -1,13 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
-from app.api.deps import get_current_user
+from fastapi import APIRouter, Depends, Query
+from app.api.deps import get_current_user, get_history_uc
 from app.models.user import User
 from app.schemas.interview import InterviewSessionInDB
 from app.schemas.base import PaginatedResponse
-from app.models.interview import InterviewSession
-from typing import List
+from app.application.use_cases.interview import GetHistoryUseCase
 
 router = APIRouter()
 
@@ -18,33 +14,16 @@ router = APIRouter()
     response_description="Paginated list of past interview sessions.",
 )
 async def get_interview_history(
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(10, ge=1, le=100, description="Max records to return"),
+    use_case: GetHistoryUseCase = Depends(get_history_uc),
 ):
     """List all interview sessions for the authenticated user.
 
     Supports offset-based pagination via `skip` and `limit`.
     """
-    # Total count
-    count_result = await db.execute(
-        select(func.count())
-        .select_from(InterviewSession)
-        .where(InterviewSession.user_id == current_user.id)
-    )
-    total = count_result.scalar_one()
-
-    # Paginated query
-    result = await db.execute(
-        select(InterviewSession)
-        .where(InterviewSession.user_id == current_user.id)
-        .order_by(InterviewSession.started_at.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-    sessions = result.scalars().all()
-
+    sessions, total = await use_case.execute(current_user.id, skip=skip, limit=limit)
     return PaginatedResponse(
         items=sessions,
         total=total,

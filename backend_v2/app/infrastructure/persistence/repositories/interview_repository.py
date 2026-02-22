@@ -10,8 +10,9 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.domain.entities.interview import InterviewSessionEntity, InterviewQuestionEntity
 from app.domain.interfaces.repositories import IInterviewRepository
@@ -32,7 +33,16 @@ class InterviewRepository(IInterviewRepository):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _session_to_entity(model: InterviewSession) -> InterviewSessionEntity:
+    def _session_to_entity(model: InterviewSession, *, include_questions: bool = True) -> InterviewSessionEntity:
+        questions = []
+        if include_questions:
+            try:
+                questions = [
+                    InterviewRepository._question_to_entity(q)
+                    for q in (model.questions or [])
+                ]
+            except Exception:
+                questions = []
         return InterviewSessionEntity(
             id=model.id,
             user_id=model.user_id,
@@ -41,10 +51,7 @@ class InterviewRepository(IInterviewRepository):
             completed_at=model.completed_at,
             final_score=model.final_score,
             feedback_summary=model.feedback_summary,
-            questions=[
-                InterviewRepository._question_to_entity(q)
-                for q in (model.questions or [])
-            ],
+            questions=questions,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -95,7 +102,9 @@ class InterviewRepository(IInterviewRepository):
 
     async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
         result = await self._db.execute(
-            select(InterviewSession).where(InterviewSession.id == session_id)
+            select(InterviewSession)
+            .options(selectinload(InterviewSession.questions))
+            .where(InterviewSession.id == session_id)
         )
         model = result.scalars().first()
         return self._session_to_entity(model) if model else None
@@ -115,14 +124,14 @@ class InterviewRepository(IInterviewRepository):
             .limit(limit)
         )
         models = result.scalars().all()
-        return [self._session_to_entity(m) for m in models]
+        return [self._session_to_entity(m, include_questions=False) for m in models]
 
     async def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         model = self._session_to_model(entity)
         self._db.add(model)
         await self._db.commit()
         await self._db.refresh(model)
-        return self._session_to_entity(model)
+        return self._session_to_entity(model, include_questions=False)
 
     async def update_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         result = await self._db.execute(
@@ -173,3 +182,37 @@ class InterviewRepository(IInterviewRepository):
         )
         models = result.scalars().all()
         return [self._question_to_entity(m) for m in models]
+
+    async def count_sessions_by_user_id(self, user_id: uuid.UUID) -> int:
+        result = await self._db.execute(
+            select(func.count())
+            .select_from(InterviewSession)
+            .where(InterviewSession.user_id == user_id)
+        )
+        return result.scalar_one()
+
+    async def get_next_unanswered_question(
+        self, session_id: uuid.UUID
+    ) -> Optional[InterviewQuestionEntity]:
+        result = await self._db.execute(
+            select(InterviewQuestion)
+            .where(
+                InterviewQuestion.session_id == session_id,
+                InterviewQuestion.answer_text == None,
+            )
+            .order_by(InterviewQuestion.created_at)
+        )
+        model = result.scalars().first()
+        return self._question_to_entity(model) if model else None
+
+    async def get_question_by_id(
+        self, question_id: uuid.UUID, session_id: uuid.UUID
+    ) -> Optional[InterviewQuestionEntity]:
+        result = await self._db.execute(
+            select(InterviewQuestion).where(
+                InterviewQuestion.id == question_id,
+                InterviewQuestion.session_id == session_id,
+            )
+        )
+        model = result.scalars().first()
+        return self._question_to_entity(model) if model else None

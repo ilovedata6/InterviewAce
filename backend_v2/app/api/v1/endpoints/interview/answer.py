@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
-from app.db.session import get_db
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_submit_answer_uc
 from app.models.user import User
 from app.schemas.interview import AnswerIn, QuestionOut
-from app.services.interview_orchestrator import get_user_session, submit_answer
+from app.application.use_cases.interview import SubmitAnswerUseCase
+from app.application.dto.interview import SubmitAnswerInput
+from app.domain.exceptions import EntityNotFoundError
 
 router = APIRouter()
 
@@ -19,8 +19,8 @@ async def answer_question(
     session_id: UUID,
     question_id: UUID,
     answer_in: AnswerIn,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    use_case: SubmitAnswerUseCase = Depends(get_submit_answer_uc),
 ):
     """Submit an answer to a specific interview question.
 
@@ -30,14 +30,17 @@ async def answer_question(
     Raises:
         404: Session not found or not owned by the user.
     """
-    session = await get_user_session(db, current_user, session_id)
-    if not session:
+    try:
+        result = await use_case.execute(
+            SubmitAnswerInput(
+                session_id=session_id,
+                question_id=question_id,
+                user_id=current_user.id,
+                answer_text=answer_in.answer_text,
+            )
+        )
+    except EntityNotFoundError:
         raise HTTPException(status_code=404, detail="Session not found or not owned by user")
-    next_question = await submit_answer(db, session, question_id, answer_in.answer_text)
-    if not next_question:
+    if not result:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    from uuid import UUID
-    question_id_val = next_question.id
-    if not isinstance(question_id_val, UUID):
-        question_id_val = UUID(str(question_id_val))
-    return QuestionOut(question_id=question_id_val, question_text=str(next_question.question_text))
+    return QuestionOut(question_id=result.question_id, question_text=result.question_text)

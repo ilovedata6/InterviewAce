@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import verify_password, get_password_hash, get_current_user
-from app.db.session import get_db
+from app.api.deps import get_current_user, get_change_password_uc
 from app.models.user import User
 from app.schemas.base import Message
 from app.schemas.auth import ChangePasswordRequest
+from app.application.use_cases.auth import ChangePasswordUseCase
+from app.application.dto.auth import ChangePasswordInput
+from app.domain.exceptions import ValidationError
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ router = APIRouter()
 async def change_password(
     payload: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    use_case: ChangePasswordUseCase = Depends(get_change_password_uc),
 ):
     """Change the authenticated user's password.
 
@@ -25,17 +26,17 @@ async def change_password(
         400: Old password incorrect or new password same as old.
         401: Not authenticated.
     """
-    if not verify_password(payload.old_password, str(current_user.hashed_password)):
+    try:
+        msg = await use_case.execute(
+            current_user.id,
+            ChangePasswordInput(
+                old_password=payload.old_password,
+                new_password=payload.new_password,
+            ),
+        )
+    except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Old password is incorrect"
+            detail=str(e.message),
         )
-    if payload.old_password == payload.new_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from old password"
-        )
-    current_user.hashed_password = get_password_hash(payload.new_password)  # type: ignore
-    db.add(current_user)
-    await db.commit()
-    return {"message": "Password changed successfully"}
+    return {"message": msg}

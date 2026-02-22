@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import create_tokens, TokenException, get_current_user_from_refresh_token
+from app.core.security import TokenException
 from app.db.session import get_db
 from app.schemas.auth import Token
+from app.application.use_cases.auth import RefreshTokenUseCase
+from app.api.deps import get_refresh_uc
 
 router = APIRouter()
 
@@ -12,7 +14,11 @@ router = APIRouter()
     summary="Refresh access token",
     response_description="New JWT access and refresh tokens.",
 )
-async def refresh_token(request: Request, db: AsyncSession = Depends(get_db)):
+async def refresh_token(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    use_case: RefreshTokenUseCase = Depends(get_refresh_uc),
+):
     """Exchange a valid refresh token for a new access/refresh pair.
 
     Raises:
@@ -24,17 +30,16 @@ async def refresh_token(request: Request, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authorization header"
         )
-    refresh_token = auth_header.split(" ")[1]
+    token = auth_header.split(" ")[1]
     try:
-        user = await get_current_user_from_refresh_token(refresh_token, db)
+        result = await use_case.execute(token, db)
     except TokenException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
         )
-    access_token, new_refresh_token = create_tokens({"sub": str(user.id)})
     return {
-        "access_token": access_token,
-        "refresh_token": new_refresh_token,
-        "token_type": "bearer"
+        "access_token": result.access_token,
+        "refresh_token": result.refresh_token,
+        "token_type": result.token_type,
     }

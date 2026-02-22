@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
 from app.schemas.auth import EmailVerificationRequest, VerificationResponse
-from app.core.security import verify_email_verification_token
-from app.models.user import User
+from app.application.use_cases.auth import VerifyEmailUseCase
+from app.api.deps import get_verify_email_uc
+from app.domain.exceptions import ValidationError
 
 router = APIRouter()
 
@@ -16,7 +14,7 @@ router = APIRouter()
 )
 async def verify_email(
     payload: EmailVerificationRequest,
-    db: AsyncSession = Depends(get_db),
+    use_case: VerifyEmailUseCase = Depends(get_verify_email_uc),
 ):
     """Confirm a user's email address using a one-time verification token.
 
@@ -24,16 +22,7 @@ async def verify_email(
         400: Invalid or expired verification token.
     """
     try:
-        user_id = verify_email_verification_token(payload.token)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid or expired verification token.")
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid or expired verification token.")
-    if user.is_email_verified is True:
-        return VerificationResponse(message="Email already verified.")
-    setattr(user, 'is_email_verified', True)
-    db.add(user)
-    await db.commit()
-    return VerificationResponse(message="Email verified successfully. You can now log in.")
+        msg = await use_case.execute(payload.token)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e.message))
+    return VerificationResponse(message=msg)

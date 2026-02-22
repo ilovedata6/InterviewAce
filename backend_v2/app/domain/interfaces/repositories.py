@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import List, Optional
 
 from app.domain.entities.user import UserEntity
@@ -65,6 +66,35 @@ class IResumeRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_by_user_id_filtered(
+        self,
+        user_id: uuid.UUID,
+        *,
+        skip: int = 0,
+        limit: int = 50,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> List[ResumeEntity]:
+        """Return resumes belonging to a user with optional filtering."""
+        ...
+
+    @abstractmethod
+    async def count_by_user_id_filtered(
+        self,
+        user_id: uuid.UUID,
+        *,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> int:
+        """Count resumes for a user with optional filtering."""
+        ...
+
+    @abstractmethod
+    async def get_latest_by_user_id(self, user_id: uuid.UUID) -> Optional[ResumeEntity]:
+        """Return the most recently created resume for a user, or None."""
+        ...
+
+    @abstractmethod
     async def create(self, entity: ResumeEntity) -> ResumeEntity:
         """Persist a new resume and return the saved entity."""
         ...
@@ -105,6 +135,11 @@ class IInterviewRepository(ABC):
         ...
 
     @abstractmethod
+    async def count_sessions_by_user_id(self, user_id: uuid.UUID) -> int:
+        """Return total count of interview sessions for a user."""
+        ...
+
+    @abstractmethod
     async def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         """Persist a new interview session and return the saved entity."""
         ...
@@ -129,4 +164,87 @@ class IInterviewRepository(ABC):
         self, session_id: uuid.UUID
     ) -> List[InterviewQuestionEntity]:
         """Return all questions for a session."""
+        ...
+
+    @abstractmethod
+    async def get_next_unanswered_question(
+        self, session_id: uuid.UUID
+    ) -> Optional[InterviewQuestionEntity]:
+        """Return the next unanswered question for a session, or None."""
+        ...
+
+    @abstractmethod
+    async def get_question_by_id(
+        self, question_id: uuid.UUID, session_id: uuid.UUID
+    ) -> Optional[InterviewQuestionEntity]:
+        """Return a specific question within a session, or None."""
+        ...
+
+
+class IAuthRepository(ABC):
+    """Port for authentication-related persistence (login attempts, sessions, tokens)."""
+
+    @abstractmethod
+    async def count_recent_failed_attempts(
+        self, user_id: uuid.UUID, ip_address: str, window_minutes: int = 5
+    ) -> int:
+        """Count recent failed login attempts within the time window."""
+        ...
+
+    @abstractmethod
+    async def lock_login_attempts(
+        self, user_id: uuid.UUID, ip_address: str, lock_duration_minutes: int = 5
+    ) -> None:
+        """Lock login attempts for the user/IP combination."""
+        ...
+
+    @abstractmethod
+    async def record_login_attempt(
+        self, user_id: uuid.UUID, ip_address: str, success: bool
+    ) -> None:
+        """Record a login attempt."""
+        ...
+
+    @abstractmethod
+    async def get_active_session_count(self, user_id: uuid.UUID) -> int:
+        """Return count of active sessions for a user."""
+        ...
+
+    @abstractmethod
+    async def deactivate_oldest_session(self, user_id: uuid.UUID) -> None:
+        """Deactivate the oldest active session for a user."""
+        ...
+
+    @abstractmethod
+    async def create_session(
+        self, user_id: uuid.UUID, ip_address: str, user_agent: Optional[str]
+    ) -> str:
+        """Create a new user session. Returns the session ID."""
+        ...
+
+    @abstractmethod
+    async def deactivate_session(self, session_id: str) -> None:
+        """Deactivate a user session by session ID."""
+        ...
+
+    @abstractmethod
+    async def create_password_reset_token(self, user_id: uuid.UUID) -> str:
+        """Create and persist a password reset token. Returns the token string."""
+        ...
+
+    @abstractmethod
+    async def verify_and_consume_reset_token(self, token: str) -> Optional[uuid.UUID]:
+        """Verify a reset token and mark as used. Returns user_id if valid, else None."""
+        ...
+
+    @abstractmethod
+    async def blacklist_token(
+        self, token_id: str, user_id: uuid.UUID, expires_at: datetime, reason: str
+    ) -> None:
+        """Add a JWT token to the blacklist."""
+        ...
+
+    @abstractmethod
+    async def is_token_blacklisted(self, token_id: str) -> bool:
+        """Check if a JWT token has been blacklisted."""
         ...

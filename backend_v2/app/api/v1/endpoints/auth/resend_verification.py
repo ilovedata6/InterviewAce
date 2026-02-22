@@ -1,11 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
+from fastapi import APIRouter, Depends
 from app.schemas.auth import ResendVerificationRequest, VerificationResponse
-from app.models.user import User
-from app.core.security import generate_email_verification_token
-from app.utils.email_utils import send_verification_email
+from app.application.use_cases.auth import ResendVerificationUseCase
+from app.api.deps import get_resend_verification_uc
 
 router = APIRouter()
 
@@ -17,17 +13,11 @@ router = APIRouter()
 )
 async def resend_verification(
     payload: ResendVerificationRequest,
-    db: AsyncSession = Depends(get_db),
+    use_case: ResendVerificationUseCase = Depends(get_resend_verification_uc),
 ):
     """Resend the email verification link.
 
     Always returns success to prevent user enumeration.
     """
-    result = await db.execute(select(User).where(User.email == payload.email))
-    user = result.scalars().first()
-    if not user or user.is_email_verified is True:
-        # Do not reveal if user exists or is already verified
-        return VerificationResponse(message="Verification email sent again.")
-    token = generate_email_verification_token(str(user.id))
-    send_verification_email(str(user.email), token)
-    return VerificationResponse(message="Verification email sent again.")
+    msg = await use_case.execute(payload.email)
+    return VerificationResponse(message=msg)
