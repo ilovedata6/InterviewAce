@@ -6,7 +6,8 @@ import re
 import uuid
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.security import LoginAttempt, TokenBlacklist, UserSession, PasswordHistory
@@ -67,14 +68,20 @@ def validate_password_complexity(password: str) -> bool:
     """Check if password meets complexity requirements"""
     return bool(PASSWORD_PATTERN.match(password))
 
-def check_password_history(user_id: str, new_password: str, db: Session) -> bool:
+async def check_password_history(user_id: str, new_password: str, db: AsyncSession) -> bool:
     """Check if password has been used before"""
     try:
         # Get recent password history
-        recent_passwords = db.query(PasswordHistory).filter(
-            PasswordHistory.user_id == user_id,
-            PasswordHistory.is_active == True
-        ).order_by(PasswordHistory.created_at.desc()).limit(PASSWORD_HISTORY_LIMIT).all()
+        result = await db.execute(
+            select(PasswordHistory)
+            .where(
+                PasswordHistory.user_id == user_id,
+                PasswordHistory.is_active == True
+            )
+            .order_by(PasswordHistory.created_at.desc())
+            .limit(PASSWORD_HISTORY_LIMIT)
+        )
+        recent_passwords = result.scalars().all()
         
         # Check against all recent passwords
         for old_password in recent_passwords:
@@ -87,7 +94,7 @@ def check_password_history(user_id: str, new_password: str, db: Session) -> bool
     except Exception as e:
         raise AuthenticationException(f"Failed to check password history: {str(e)}")
 
-def record_password_history(user_id: str, password_hash: str, db: Session) -> None:
+async def record_password_history(user_id: str, password_hash: str, db: AsyncSession) -> None:
     """Record password in history"""
     try:
         history = PasswordHistory(
@@ -95,7 +102,7 @@ def record_password_history(user_id: str, password_hash: str, db: Session) -> No
             password_hash=password_hash
         )
         db.add(history)
-        db.commit()
+        await db.commit()
     except Exception as e:
         raise AuthenticationException(f"Failed to record password history: {str(e)}")
 
@@ -148,7 +155,7 @@ def create_token(data: dict, expires_delta: timedelta) -> str:
     except Exception as e:
         raise TokenException(f"Failed to create token: {str(e)}")
 
-def verify_token(token: str, db: Session) -> Optional[dict]:
+async def verify_token(token: str, db: AsyncSession) -> Optional[dict]:
     """Verify JWT token"""
     try:
         secret_key = os.getenv('SECRET_KEY')
@@ -182,29 +189,32 @@ def verify_token(token: str, db: Session) -> Optional[dict]:
         token_id = payload.get("jti")
         if not token_id:
             raise TokenException("Invalid token: missing token ID")
-        if check_token_revocation(token_id, db):
+        if await check_token_revocation(token_id, db):
             raise TokenException("Token has been revoked")
             
         return payload
     except JWTError as e:
         raise TokenException(f"Token verification failed: {str(e)}")
 
-def check_token_revocation(token_id: str, db: Session) -> bool:
+async def check_token_revocation(token_id: str, db: AsyncSession) -> bool:
     """Check if token has been revoked"""
     try:
-        blacklisted_token = db.query(TokenBlacklist).filter(
-            TokenBlacklist.token_id == token_id,
-            TokenBlacklist.expires_at > datetime.now(timezone.utc)
-        ).first()
+        result = await db.execute(
+            select(TokenBlacklist).where(
+                TokenBlacklist.token_id == token_id,
+                TokenBlacklist.expires_at > datetime.now(timezone.utc)
+            )
+        )
+        blacklisted_token = result.scalars().first()
         return blacklisted_token is not None
     except Exception as e:
         raise TokenException(f"Failed to check token revocation: {str(e)}")
 
-def revoke_tokens(token: str, user_id: str, db: Session) -> None:
+async def revoke_tokens(token: str, user_id: str, db: AsyncSession) -> None:
     """Revoke access and refresh tokens"""
     try:
         # Get token payload
-        payload = verify_token(token, db)
+        payload = await verify_token(token, db)
         if not payload or not isinstance(payload, dict):
             raise TokenException("Invalid token payload")
         token_id = payload.get("jti")
@@ -213,7 +223,7 @@ def revoke_tokens(token: str, user_id: str, db: Session) -> None:
             raise TokenException("Invalid token: missing token ID")
         
         # Check if token is already blacklisted
-        if check_token_revocation(token_id, db):
+        if await check_token_revocation(token_id, db):
             return  # Token already revoked
         
         # Add token to blacklist
@@ -224,39 +234,49 @@ def revoke_tokens(token: str, user_id: str, db: Session) -> None:
             reason="logout"
         )
         db.add(blacklisted_token)
-        db.commit()
+        await db.commit()
     except JWTError as e:
         raise TokenException(f"Invalid token: {str(e)}")
     except Exception as e:
         raise TokenException(f"Failed to revoke token: {str(e)}")
 
-def check_login_attempts(user_id: str, ip_address: str, db: Session) -> bool:
+async def check_login_attempts(user_id: str, ip_address: str, db: AsyncSession) -> bool:
     """Check if user has exceeded login attempts"""
     try:
         # Get recent failed attempts
-        recent_attempts = db.query(LoginAttempt).filter(
-            LoginAttempt.user_id == user_id,
-            LoginAttempt.ip_address == ip_address,
-            LoginAttempt.created_at > datetime.now(timezone.utc) - timedelta(minutes=5),
-            LoginAttempt.success == False
-        ).count()
+        result = await db.execute(
+            select(func.count())
+            .select_from(LoginAttempt)
+            .where(
+                LoginAttempt.user_id == user_id,
+                LoginAttempt.ip_address == ip_address,
+                LoginAttempt.created_at > datetime.now(timezone.utc) - timedelta(minutes=5),
+                LoginAttempt.success == False
+            )
+        )
+        recent_attempts = result.scalar_one()
         
         max_attempts = int(os.getenv('MAX_LOGIN_ATTEMPTS', 5))
         if recent_attempts >= max_attempts:
             # Lock the account
             lock_until = datetime.now(timezone.utc) + timedelta(minutes=5)
-            db.query(LoginAttempt).filter(
-                LoginAttempt.user_id == user_id,
-                LoginAttempt.ip_address == ip_address
-            ).update({"locked_until": lock_until})
-            db.commit()
+            from sqlalchemy import update as sa_update
+            await db.execute(
+                sa_update(LoginAttempt)
+                .where(
+                    LoginAttempt.user_id == user_id,
+                    LoginAttempt.ip_address == ip_address
+                )
+                .values(locked_until=lock_until)
+            )
+            await db.commit()
             raise AuthenticationException("Account locked due to too many failed attempts")
         
         return True
     except Exception as e:
         raise AuthenticationException(f"{str(e)}")
 
-def record_login_attempt(user_id: str, ip_address: str, success: bool, db: Session) -> None:
+async def record_login_attempt(user_id: str, ip_address: str, success: bool, db: AsyncSession) -> None:
     """Record login attempt"""
     try:
         attempt = LoginAttempt(
@@ -265,30 +285,41 @@ def record_login_attempt(user_id: str, ip_address: str, success: bool, db: Sessi
             success=success
         )
         db.add(attempt)
-        db.commit()
+        await db.commit()
     except Exception as e:
         raise AuthenticationException(f"Failed to record login attempt: {str(e)}")
 
-def create_user_session(user_id: str, ip_address: str, user_agent: Optional[str], db: Session) -> str:
+async def create_user_session(user_id: str, ip_address: str, user_agent: Optional[str], db: AsyncSession) -> str:
     """Create a new user session"""
     try:
         # Check if user has too many active sessions
         max_sessions = int(os.getenv('MAX_SESSIONS_PER_USER', 5))
-        active_sessions = db.query(UserSession).filter(
-            UserSession.user_id == user_id,
-            UserSession.is_active == True
-        ).count()
+        result = await db.execute(
+            select(func.count())
+            .select_from(UserSession)
+            .where(
+                UserSession.user_id == user_id,
+                UserSession.is_active == True
+            )
+        )
+        active_sessions = result.scalar_one()
         
         if active_sessions >= max_sessions:
             # Deactivate oldest session
-            oldest_session = db.query(UserSession).filter(
-                UserSession.user_id == user_id,
-                UserSession.is_active == True
-            ).order_by(UserSession.last_activity).first()
+            oldest_result = await db.execute(
+                select(UserSession)
+                .where(
+                    UserSession.user_id == user_id,
+                    UserSession.is_active == True
+                )
+                .order_by(UserSession.last_activity)
+                .limit(1)
+            )
+            oldest_session = oldest_result.scalars().first()
             
             if oldest_session:
                 setattr(oldest_session, "is_active", False)
-                db.commit()
+                await db.commit()
         
         # Create new session
         session_id = str(uuid.uuid4())
@@ -299,43 +330,49 @@ def create_user_session(user_id: str, ip_address: str, user_agent: Optional[str]
             user_agent=user_agent
         )
         db.add(session)
-        db.commit()
+        await db.commit()
         
         return session_id
     except Exception as e:
         raise SessionException(f"Failed to create user session: {str(e)}")
 
-def update_session_activity(session_id: str, db: Session) -> None:
+async def update_session_activity(session_id: str, db: AsyncSession) -> None:
     """Update session last activity time"""
     try:
-        session = db.query(UserSession).filter(
-            UserSession.session_id == session_id,
-            UserSession.is_active == True
-        ).first()
+        result = await db.execute(
+            select(UserSession).where(
+                UserSession.session_id == session_id,
+                UserSession.is_active == True
+            )
+        )
+        session = result.scalars().first()
         
         if not session:
             raise SessionException("Session not found or inactive")
             
         setattr(session, "last_activity", datetime.now(timezone.utc))
-        db.commit()
+        await db.commit()
     except Exception as e:
         raise SessionException(f"Failed to update session activity: {str(e)}")
 
-def deactivate_session(session_id: str, db: Session) -> None:
+async def deactivate_session(session_id: str, db: AsyncSession) -> None:
     """Deactivate a user session"""
     try:
         if not session_id:
             return  # No session ID provided, skip deactivation
             
-        session = db.query(UserSession).filter(
-            UserSession.session_id == session_id,
-            UserSession.is_active == True
-        ).first()
+        result = await db.execute(
+            select(UserSession).where(
+                UserSession.session_id == session_id,
+                UserSession.is_active == True
+            )
+        )
+        session = result.scalars().first()
         
         if session:
             setattr(session, "is_active", bool(False))
             session.deactivated_at = datetime.now(timezone.utc)
-            db.commit()
+            await db.commit()
     except Exception as e:
         # Log the error but don't raise it to prevent logout failure
         print(f"Warning: Failed to deactivate session: {str(e)}")
@@ -350,20 +387,21 @@ def verify_csrf_token(token: str, csrf_token: str) -> bool:
         raise SecurityException("Missing CSRF token")
     return token == csrf_token
 
-def get_current_user(
+async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ) -> User:
     """Get current user from token"""
     try:
-        payload = verify_token(token, db)
+        payload = await verify_token(token, db)
         if not payload or not isinstance(payload, dict):
             raise AuthenticationException("Invalid token payload")
         user_id = payload.get("sub")
         if not user_id:
             raise AuthenticationException("Invalid token payload")
         
-        user = db.query(User).filter(User.id == user_id).first()
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalars().first()
         if not user:
             raise AuthenticationException("User not found")
         
@@ -374,11 +412,11 @@ def get_current_user(
     except Exception as e:
         raise AuthenticationException(str(e))
 
-def get_current_user_from_refresh_token(refresh_token: str, db: Session) -> User:
+async def get_current_user_from_refresh_token(refresh_token: str, db: AsyncSession) -> User:
     """
     Validate the refresh token, ensure it is not revoked, and return the user.
     """
-    payload = verify_token(refresh_token, db)
+    payload = await verify_token(refresh_token, db)
     if not payload or not isinstance(payload, dict):
         raise TokenException("Invalid refresh token payload")
     if payload.get("type") != "refresh":
@@ -386,7 +424,8 @@ def get_current_user_from_refresh_token(refresh_token: str, db: Session) -> User
     user_id = payload.get("sub")
     if not user_id:
         raise TokenException("Invalid refresh token: missing user id")
-    user = db.query(User).filter(User.id == user_id).first()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
     if not user:
         raise TokenException("User not found")
     # Use .is_active == True to avoid SQLAlchemy Column[bool] __bool__ error

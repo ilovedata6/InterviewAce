@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import (
     get_current_user,
     revoke_tokens,
@@ -16,7 +16,7 @@ router = APIRouter()
 async def logout(
     request: Request,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     try:
         auth_header = request.headers.get("Authorization")
@@ -27,12 +27,12 @@ async def logout(
             )
         token = auth_header.split(" ")[1]
         try:
-            revoke_tokens(token, str(current_user.id), db)
+            await revoke_tokens(token, str(current_user.id), db)
         except TokenException as e:
             print(f"Warning: Token revocation failed: {str(e)}")
         session_id = request.headers.get("X-Session-ID")
         if session_id:
-            deactivate_session(session_id, db)
+            await deactivate_session(session_id, db)
         return {"message": "Successfully logged out"}
     except HTTPException:
         raise

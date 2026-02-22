@@ -65,13 +65,19 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Construct DATABASE_URL from components if not explicitly set."""
+        """Construct sync DATABASE_URL (used by Alembic CLI)."""
         if self.DATABASE_URL:
             return self.DATABASE_URL
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
         )
+
+    @property
+    def async_database_url(self) -> str:
+        """Construct async DATABASE_URL for asyncpg driver (used by the app)."""
+        sync_url = self.database_url
+        return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
     # ── File Upload ───────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"

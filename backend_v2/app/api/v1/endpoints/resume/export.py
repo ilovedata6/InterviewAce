@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import os
 import tempfile
@@ -24,14 +25,17 @@ router = APIRouter()
 async def download_resume(
     resume_id: str,
     format: str = "original",
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Download a resume in the specified format."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -83,14 +87,17 @@ async def download_resume(
 @router.get("/{resume_id}/preview")
 async def preview_resume(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get a preview of the resume content."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(

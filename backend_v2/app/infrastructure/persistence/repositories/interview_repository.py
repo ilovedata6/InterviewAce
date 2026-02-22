@@ -10,7 +10,8 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.interview import InterviewSessionEntity, InterviewQuestionEntity
 from app.domain.interfaces.repositories import IInterviewRepository
@@ -23,7 +24,7 @@ from app.infrastructure.persistence.models.interview import (
 class InterviewRepository(IInterviewRepository):
     """Concrete interview persistence backed by SQLAlchemy."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -92,86 +93,83 @@ class InterviewRepository(IInterviewRepository):
     # Interface methods — Session
     # ------------------------------------------------------------------
 
-    def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
-        model = (
-            self._db.query(InterviewSession)
-            .filter(InterviewSession.id == session_id)
-            .first()
+    async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
+        result = await self._db.execute(
+            select(InterviewSession).where(InterviewSession.id == session_id)
         )
+        model = result.scalars().first()
         return self._session_to_entity(model) if model else None
 
-    def get_sessions_by_user_id(
+    async def get_sessions_by_user_id(
         self,
         user_id: uuid.UUID,
         *,
         skip: int = 0,
         limit: int = 50,
     ) -> List[InterviewSessionEntity]:
-        models = (
-            self._db.query(InterviewSession)
-            .filter(InterviewSession.user_id == user_id)
+        result = await self._db.execute(
+            select(InterviewSession)
+            .where(InterviewSession.user_id == user_id)
             .order_by(InterviewSession.started_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        models = result.scalars().all()
         return [self._session_to_entity(m) for m in models]
 
-    def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
+    async def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         model = self._session_to_model(entity)
         self._db.add(model)
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._session_to_entity(model)
 
-    def update_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
-        model = (
-            self._db.query(InterviewSession)
-            .filter(InterviewSession.id == entity.id)
-            .first()
+    async def update_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
+        result = await self._db.execute(
+            select(InterviewSession).where(InterviewSession.id == entity.id)
         )
+        model = result.scalars().first()
         if model is None:
             raise ValueError(f"InterviewSession {entity.id} not found")
         model.completed_at = entity.completed_at
         model.final_score = entity.final_score
         model.feedback_summary = entity.feedback_summary
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._session_to_entity(model)
 
     # ------------------------------------------------------------------
     # Interface methods — Question
     # ------------------------------------------------------------------
 
-    def add_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
+    async def add_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
         model = self._question_to_model(entity)
         self._db.add(model)
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._question_to_entity(model)
 
-    def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
-        model = (
-            self._db.query(InterviewQuestion)
-            .filter(InterviewQuestion.id == entity.id)
-            .first()
+    async def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
+        result = await self._db.execute(
+            select(InterviewQuestion).where(InterviewQuestion.id == entity.id)
         )
+        model = result.scalars().first()
         if model is None:
             raise ValueError(f"InterviewQuestion {entity.id} not found")
         model.answer_text = entity.answer_text
         model.evaluation_score = entity.evaluation_score
         model.feedback_comment = entity.feedback_comment
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._question_to_entity(model)
 
-    def get_questions_by_session_id(
+    async def get_questions_by_session_id(
         self, session_id: uuid.UUID
     ) -> List[InterviewQuestionEntity]:
-        models = (
-            self._db.query(InterviewQuestion)
-            .filter(InterviewQuestion.session_id == session_id)
+        result = await self._db.execute(
+            select(InterviewQuestion)
+            .where(InterviewQuestion.session_id == session_id)
             .order_by(InterviewQuestion.created_at)
-            .all()
         )
+        models = result.scalars().all()
         return [self._question_to_entity(m) for m in models]

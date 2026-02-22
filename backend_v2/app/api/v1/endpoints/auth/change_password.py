@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import verify_password, get_password_hash, get_current_user
 from app.db.session import get_db
 from app.models.user import User
@@ -12,7 +12,7 @@ router = APIRouter()
 async def change_password(
     payload: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not verify_password(payload.old_password, str(current_user.hashed_password)):
         raise HTTPException(
@@ -26,5 +26,5 @@ async def change_password(
         )
     current_user.hashed_password = get_password_hash(payload.new_password)  # type: ignore
     db.add(current_user)
-    db.commit()
+    await db.commit()
     return {"message": "Password changed successfully"}

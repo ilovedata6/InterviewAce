@@ -5,7 +5,7 @@ import logging
 from typing import Dict, Any
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 import pdfplumber
 import docx
 
@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Public API ────────────────────────────────────────────────────────────────
-def parse_and_store_resume(
+async def parse_and_store_resume(
     file_path: str,
     user_id: int,
-    db: Session,
+    db: AsyncSession,
     llm_provider: ILLMProvider | None = None,
 ) -> ResumeModel:
     """
@@ -43,8 +43,8 @@ def parse_and_store_resume(
 
     resume = _map_to_model(parsed, user_id, file_path)
     db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    await db.commit()
+    await db.refresh(resume)
     return resume
 
 

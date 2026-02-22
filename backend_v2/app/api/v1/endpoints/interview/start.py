@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from datetime import datetime, timezone
 from app.db.session import get_db
@@ -13,15 +14,18 @@ from app.models.user import User  # Import the User model
 router = APIRouter()
 
 @router.post("", response_model=InterviewSessionInDB)
-def start_interview_session(
+async def start_interview_session(
     session_data: InterviewSessionCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)  # Note: This returns a User object
 ):
     # Get user's most recent resume
-    resume = db.query(Resume).filter(
-        Resume.user_id == current_user.id  # Using the ID field from User object
-    ).order_by(Resume.created_at.desc()).first()
+    result = await db.execute(
+        select(Resume)
+        .where(Resume.user_id == current_user.id)
+        .order_by(Resume.created_at.desc())
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -31,22 +35,22 @@ def start_interview_session(
 
     # Create interview session
     session = InterviewSession(
-        user_id=current_user.id,  # Using the ID field from User object
+        user_id=current_user.id,
         resume_id=resume.id,
         started_at=datetime.now(timezone.utc)
     )
     db.add(session)
-    db.commit()
-    db.refresh(session)
+    await db.commit()
+    await db.refresh(session)
 
     # Generate and persist questions
     orchestrator = InterviewOrchestrator(db)
     try:
-        resume_context = orchestrator.fetch_resume_context(UUID(str(resume.id)))  # Convert Column[UUID] to UUID
+        resume_context = await orchestrator.fetch_resume_context(UUID(str(resume.id)))
         questions = orchestrator.generate_questions(session, resume_context)
-        orchestrator.persist_questions(session, questions)
+        await orchestrator.persist_questions(session, questions)
     except Exception as e:
-        db.rollback()  # Rollback the session creation if question generation fails
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Failed to generate questions"

@@ -9,7 +9,8 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import UserEntity
 from app.domain.interfaces.repositories import IUserRepository
@@ -19,7 +20,7 @@ from app.infrastructure.persistence.models.user import User
 class UserRepository(IUserRepository):
     """Concrete user persistence backed by SQLAlchemy."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -54,23 +55,26 @@ class UserRepository(IUserRepository):
     # Interface methods
     # ------------------------------------------------------------------
 
-    def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
-        model = self._db.query(User).filter(User.id == user_id).first()
+    async def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
+        result = await self._db.execute(select(User).where(User.id == user_id))
+        model = result.scalars().first()
         return self._to_entity(model) if model else None
 
-    def get_by_email(self, email: str) -> Optional[UserEntity]:
-        model = self._db.query(User).filter(User.email == email).first()
+    async def get_by_email(self, email: str) -> Optional[UserEntity]:
+        result = await self._db.execute(select(User).where(User.email == email))
+        model = result.scalars().first()
         return self._to_entity(model) if model else None
 
-    def create(self, entity: UserEntity) -> UserEntity:
+    async def create(self, entity: UserEntity) -> UserEntity:
         model = self._to_model(entity)
         self._db.add(model)
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._to_entity(model)
 
-    def update(self, entity: UserEntity) -> UserEntity:
-        model = self._db.query(User).filter(User.id == entity.id).first()
+    async def update(self, entity: UserEntity) -> UserEntity:
+        result = await self._db.execute(select(User).where(User.id == entity.id))
+        model = result.scalars().first()
         if model is None:
             raise ValueError(f"User {entity.id} not found")
         model.full_name = entity.full_name
@@ -78,14 +82,15 @@ class UserRepository(IUserRepository):
         model.hashed_password = entity.hashed_password
         model.is_active = entity.is_active
         model.is_email_verified = entity.is_email_verified
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._to_entity(model)
 
-    def delete(self, user_id: uuid.UUID) -> bool:
-        model = self._db.query(User).filter(User.id == user_id).first()
+    async def delete(self, user_id: uuid.UUID) -> bool:
+        result = await self._db.execute(select(User).where(User.id == user_id))
+        model = result.scalars().first()
         if model is None:
             return False
-        self._db.delete(model)
-        self._db.commit()
+        await self._db.delete(model)
+        await self._db.commit()
         return True

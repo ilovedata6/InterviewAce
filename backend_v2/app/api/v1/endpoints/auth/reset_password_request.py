@@ -1,7 +1,8 @@
 from uuid import UUID
 from typing import cast
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.auth import ResetPasswordRequestIn, MessageOut
 from app.models.user import User
@@ -15,13 +16,14 @@ router = APIRouter()
     response_model=MessageOut,
     summary="Initiate forgot-password flow"
 )
-def reset_password_request(
+async def reset_password_request(
     payload: ResetPasswordRequestIn,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == payload.email).first()
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalars().first()
     if user:
-        token = create_password_reset_token(db, cast(UUID, user.id))
+        token = await create_password_reset_token(db, cast(UUID, user.id))
         reset_link = f"https://your-frontend-domain.com/reset-password?token={token}"
         email_body = (
             f"Hi {user.email},\n\n"

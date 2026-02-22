@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 import uuid, os
 
 from app.schemas.resume import ResumeUploadResponse
@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
     response_model=ResumeUploadResponse,
     status_code=status.HTTP_201_CREATED
 )
-def upload_resume(
+async def upload_resume(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     #  Validate file type & size
@@ -47,7 +47,7 @@ def upload_resume(
 
     # Delegate to service for parsing & DB persistence
     try:
-        resume_record = parse_and_store_resume(
+        resume_record = await parse_and_store_resume(
             file_path=upload_path,
             user_id=current_user.id,
             db=db

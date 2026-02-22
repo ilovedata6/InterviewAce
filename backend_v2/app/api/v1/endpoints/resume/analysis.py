@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-import asyncio
 
 from app.db.session import get_db
 from app.models.user import User
@@ -16,14 +16,17 @@ router = APIRouter()
 @router.get("/{resume_id}", response_model=ResumeAnalysisResponse)
 async def get_resume_analysis(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the analysis results for a specific resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -50,14 +53,17 @@ async def get_resume_analysis(
 async def reanalyze_resume(
     resume_id: str,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Trigger a reanalysis of the resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -67,7 +73,7 @@ async def reanalyze_resume(
     
     # Update status to processing
     resume.status = ResumeStatus.PROCESSING
-    db.commit()
+    await db.commit()
     
     # Start background analysis
     background_tasks.add_task(analyze_resume_content, resume.id, db)
@@ -84,14 +90,17 @@ async def reanalyze_resume(
 @router.get("/{resume_id}/skills", response_model=List[str])
 async def get_resume_skills(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the extracted skills from the resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -110,14 +119,17 @@ async def get_resume_skills(
 @router.get("/{resume_id}/experience", response_model=List[dict])
 async def get_resume_experience(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the extracted work experience from the resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -136,14 +148,17 @@ async def get_resume_experience(
 @router.get("/{resume_id}/education", response_model=List[dict])
 async def get_resume_education(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the extracted education information from the resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(

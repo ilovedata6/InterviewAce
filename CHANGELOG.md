@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `infrastructure/llm/gemini_provider.py` — `GeminiProvider(ILLMProvider)` refactored from legacy code with markdown fence cleaning
   - `infrastructure/llm/factory.py` — `LLMProviderWithFallback` composite + `get_llm_provider()` factory
   - `services/ai_analyzer.py` — background resume re-analysis service using LLM provider chain
+- **Async Database Layer** (Phase 4):
+  - `asyncpg>=0.30.0` added to requirements for native async PostgreSQL connectivity
+  - `config.py` — `async_database_url` property auto-converts `postgresql://` → `postgresql+asyncpg://`
+  - `db/session.py` — fully async: `create_async_engine`, `async_sessionmaker`, `AsyncSession`, async `get_db()` generator
+  - Pool tuning: `pool_pre_ping=True`, `pool_size=10`, `max_overflow=20`, `expire_on_commit=False`
 
 ### Changed
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
@@ -63,6 +68,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `utils/llm_client.py` — replaced with backward-compat deprecation shim delegating to `get_llm_provider()`
   - System/user prompts updated to include "respond with valid JSON only" for OpenAI JSON mode compatibility
   - `requirements.txt` — added `openai>=1.60.0`, `google-genai>=1.0.0`
+- **Async Database Layer** (Phase 4):
+  - `core/security.py` — all 12 DB-touching functions converted to async (`check_password_history`, `record_password_history`, `verify_token`, `check_token_revocation`, `revoke_tokens`, `check_login_attempts`, `record_login_attempt`, `create_user_session`, `update_session_activity`, `deactivate_session`, `get_current_user`, `get_current_user_from_refresh_token`)
+  - `api/deps.py` — `get_current_user` dependency now async with `select()` + `await`
+  - All 4 services converted to async: `auth_service.py`, `resume_parser.py`, `interview_orchestrator.py`, `ai_analyzer.py`
+  - All 10 auth endpoints converted: `Session` → `AsyncSession`, `db.query()` → `await db.execute(select())`
+  - All 7 interview endpoints converted to async
+  - All 6 resume endpoints converted to async
+  - Repository interfaces (`domain/interfaces/repositories.py`) — all method signatures now `async def`
+  - Repository implementations (`UserRepository`, `ResumeRepository`, `InterviewRepository`) — all methods now async with `select()` pattern
+  - `resume/management.py` — `status` param renamed to `status_filter` with `Query(alias="status")` to avoid shadowing
+  - Alembic `env.py` intentionally kept sync (CLI tool, not in async event loop); uses `settings.database_url` (sync psycopg2 driver)
 
 ### Removed
 - `torch==2.2.0`, `transformers==4.37.2`, `spacy==3.7.2` and 20+ transitive deps (~2 GB) removed from `requirements.txt`

@@ -1,7 +1,8 @@
 import logging
 from typing import List, cast
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.interview import InterviewSession, InterviewQuestion
 from app.schemas.interview import InterviewQuestionCreate, SummaryOut, QuestionFeedback
 from app.db.session import get_db
@@ -16,12 +17,13 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 class InterviewOrchestrator:
-    def __init__(self, db: Session, llm_provider: ILLMProvider | None = None):
+    def __init__(self, db: AsyncSession, llm_provider: ILLMProvider | None = None):
         self.db = db
         self.llm_provider = llm_provider or get_llm_provider()
 
-    def fetch_resume_context(self, resume_id: UUID) -> dict:
-        resume = self.db.query(Resume).filter(Resume.id == resume_id).first()
+    async def fetch_resume_context(self, resume_id: UUID) -> dict:
+        result = await self.db.execute(select(Resume).where(Resume.id == resume_id))
+        resume = result.scalars().first()
         if not resume:
             raise ValueError(f"Resume with ID {resume_id} not found")
 
@@ -94,7 +96,7 @@ class InterviewOrchestrator:
     def _map_questions_to_schema(self, session_id: UUID, questions: List[str]) -> List[InterviewQuestionCreate]:
         return [InterviewQuestionCreate(session_id=session_id, question_text=q) for q in questions]
 
-    def persist_questions(self, session: InterviewSession, questions: List[InterviewQuestionCreate]):
+    async def persist_questions(self, session: InterviewSession, questions: List[InterviewQuestionCreate]):
         logger.info(f"Persisting {len(questions)} questions for session {session.id}")
         for question_schema in questions:
             question = InterviewQuestion(
@@ -102,40 +104,47 @@ class InterviewOrchestrator:
                 question_text=question_schema.question_text
             )
             self.db.add(question)
-        self.db.commit()
+        await self.db.commit()
         logger.info(f"Successfully persisted questions for session {session.id}")
 
-def get_user_session(db: Session, user: User, session_id: UUID):
-    session = db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
+async def get_user_session(db: AsyncSession, user: User, session_id: UUID):
+    result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
+    session = result.scalars().first()
     if session is None:
         return None
     if str(session.user_id) != str(user.id):
         return None
     return session
 
-def get_next_question(db: Session, session: InterviewSession):
-    return (
-        db.query(InterviewQuestion)
-        .filter(InterviewQuestion.session_id == session.id, InterviewQuestion.answer_text == None)
+async def get_next_question(db: AsyncSession, session: InterviewSession):
+    result = await db.execute(
+        select(InterviewQuestion)
+        .where(InterviewQuestion.session_id == session.id, InterviewQuestion.answer_text == None)
         .order_by(InterviewQuestion.created_at)
-        .first()
     )
+    return result.scalars().first()
 
-def submit_answer(db: Session, session: InterviewSession, question_id: UUID, answer_text: str):
-    question = db.query(InterviewQuestion).filter(
-        InterviewQuestion.id == question_id,
-        InterviewQuestion.session_id == session.id
-    ).first()
+async def submit_answer(db: AsyncSession, session: InterviewSession, question_id: UUID, answer_text: str):
+    result = await db.execute(
+        select(InterviewQuestion).where(
+            InterviewQuestion.id == question_id,
+            InterviewQuestion.session_id == session.id
+        )
+    )
+    question = result.scalars().first()
     if not question:
         raise HTTPException(status_code=404, detail="Question not found or not in session")
     question.answer_text = answer_text  # type: ignore
-    db.commit()
-    next_question = get_next_question(db, session)
+    await db.commit()
+    next_question = await get_next_question(db, session)
     return next_question
 
-def complete_interview_session(db: Session, session: InterviewSession):
+async def complete_interview_session(db: AsyncSession, session: InterviewSession):
     # Fetch all questions for the session
-    questions = db.query(InterviewQuestion).filter(InterviewQuestion.session_id == session.id).all()
+    result = await db.execute(
+        select(InterviewQuestion).where(InterviewQuestion.session_id == session.id)
+    )
+    questions = result.scalars().all()
     if not questions:
         raise HTTPException(status_code=400, detail="No questions found for this session.")
     unanswered = [q for q in questions if q.answer_text is None]
@@ -184,7 +193,7 @@ def complete_interview_session(db: Session, session: InterviewSession):
     session.completed_at = datetime.now(timezone.utc)  # type: ignore
     session.final_score = confidence_score
     session.feedback_summary = summary
-    db.commit()
+    await db.commit()
 
     # Update question feedback
     for feedback in questions_feedback:
@@ -193,7 +202,7 @@ def complete_interview_session(db: Session, session: InterviewSession):
         if q:
             q.evaluation_score = feedback.get("evaluation_score")
             q.feedback_comment = feedback.get("feedback_comment")
-    db.commit()
+    await db.commit()
 
     # Build response
     return SummaryOut(
@@ -209,9 +218,12 @@ def complete_interview_session(db: Session, session: InterviewSession):
         ]
     )
 
-def get_interview_summary(db: Session, session):
+async def get_interview_summary(db: AsyncSession, session):
     # Fetch all questions for the session
-    questions = db.query(InterviewQuestion).filter(InterviewQuestion.session_id == session.id).all()
+    result = await db.execute(
+        select(InterviewQuestion).where(InterviewQuestion.session_id == session.id)
+    )
+    questions = result.scalars().all()
     if not questions:
         raise HTTPException(status_code=404, detail="No questions found for this session.")
 
@@ -228,7 +240,8 @@ def get_interview_summary(db: Session, session):
     ]
 
     # Fetch user full name
-    user = db.query(User).filter(User.id == session.user_id).first()
+    user_result = await db.execute(select(User).where(User.id == session.user_id))
+    user = user_result.scalars().first()
     user_full_name = getattr(user, "full_name", None) if user else None
 
     # Compose summary

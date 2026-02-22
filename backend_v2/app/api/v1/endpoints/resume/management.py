@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import datetime, timezone
 import os
@@ -21,28 +22,34 @@ router = APIRouter()
 
 @router.get("/", response_model=ResumeList)
 async def list_resumes(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    status: Optional[ResumeStatus] = None,
+    status_filter: Optional[ResumeStatus] = Query(None, alias="status"),
     search: Optional[str] = None
 ):
     """List all resumes for the current user with pagination and filtering."""
-    query = db.query(Resume).filter(Resume.user_id == current_user.id)
+    stmt = select(Resume).where(Resume.user_id == current_user.id)
+    count_stmt = select(func.count()).select_from(Resume).where(Resume.user_id == current_user.id)
     
-    if status:
-        query = query.filter(Resume.status == status)
+    if status_filter:
+        stmt = stmt.where(Resume.status == status_filter)
+        count_stmt = count_stmt.where(Resume.status == status_filter)
     
     if search:
         search_term = f"%{search}%"
-        query = query.filter(
-            (Resume.title.ilike(search_term)) |
-            (Resume.description.ilike(search_term))
-        )
+        search_cond = (Resume.title.ilike(search_term)) | (Resume.description.ilike(search_term))
+        stmt = stmt.where(search_cond)
+        count_stmt = count_stmt.where(search_cond)
     
-    total = query.count()
-    resumes = query.order_by(Resume.created_at.desc()).offset(skip).limit(limit).all()
+    total_result = await db.execute(count_stmt)
+    total = total_result.scalar_one()
+    
+    result = await db.execute(
+        stmt.order_by(Resume.created_at.desc()).offset(skip).limit(limit)
+    )
+    resumes = result.scalars().all()
     
     return ResumeList(
         resumes=resumes,
@@ -55,14 +62,17 @@ async def list_resumes(
 @router.get("/{resume_id}", response_model=ResumeResponse)
 async def get_resume(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get a specific resume by ID."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -76,14 +86,17 @@ async def get_resume(
 async def update_resume(
     resume_id: str,
     resume_update: ResumeUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Update resume metadata."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -96,22 +109,25 @@ async def update_resume(
         setattr(resume, field, value)
     
     resume.updated_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(resume)
+    await db.commit()
+    await db.refresh(resume)
     
     return resume
 
 @router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_resume(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Delete a resume and its associated file."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -124,5 +140,5 @@ async def delete_resume(
         os.remove(resume.file_path)
     
     # Delete the database record
-    db.delete(resume)
-    db.commit()
+    await db.delete(resume)
+    await db.commit()

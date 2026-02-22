@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from app.db.session import get_db
 from app.api.deps import get_current_user
@@ -10,12 +10,12 @@ from app.services.interview_orchestrator import get_user_session, get_interview_
 router = APIRouter()
 
 @router.get("/{session_id}/summary", response_model=dict, status_code=200)
-def get_interview_summary_route(
+async def get_interview_summary_route(
     session_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    session = get_user_session(db, current_user, session_id)
+    session = await get_user_session(db, current_user, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or not owned by user")
-    return get_interview_summary(db, session)
+    return await get_interview_summary(db, session)

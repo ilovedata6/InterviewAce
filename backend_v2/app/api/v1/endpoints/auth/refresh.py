@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import create_tokens, TokenException, get_current_user_from_refresh_token
 from app.db.session import get_db
 from app.schemas.auth import Token
@@ -7,7 +7,7 @@ from app.schemas.auth import Token
 router = APIRouter()
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(request: Request, db: Session = Depends(get_db)):
+async def refresh_token(request: Request, db: AsyncSession = Depends(get_db)):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
@@ -16,7 +16,7 @@ async def refresh_token(request: Request, db: Session = Depends(get_db)):
         )
     refresh_token = auth_header.split(" ")[1]
     try:
-        user = get_current_user_from_refresh_token(refresh_token, db)
+        user = await get_current_user_from_refresh_token(refresh_token, db)
     except TokenException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

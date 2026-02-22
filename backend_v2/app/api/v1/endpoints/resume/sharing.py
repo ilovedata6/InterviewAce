@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime, timedelta
 import uuid
@@ -18,14 +19,17 @@ router = APIRouter()
 async def share_resume(
     resume_id: str,
     share_request: ResumeShareRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Share a resume with others."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -44,7 +48,7 @@ async def share_resume(
     # Update resume sharing settings
     resume.is_public = share_request.is_public
     resume.share_token = share_token
-    db.commit()
+    await db.commit()
     
     # Generate share URL
     share_url = f"{settings.FRONTEND_URL}/resume/shared/{share_token}"
@@ -59,10 +63,13 @@ async def share_resume(
 @router.get("/shared/{share_token}", response_model=ResumeResponse)
 async def get_shared_resume(
     share_token: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Get a shared resume using the share token."""
-    resume = db.query(Resume).filter(Resume.share_token == share_token).first()
+    result = await db.execute(
+        select(Resume).where(Resume.share_token == share_token)
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -81,14 +88,17 @@ async def get_shared_resume(
 @router.post("/{resume_id}/unshare", status_code=status.HTTP_204_NO_CONTENT)
 async def unshare_resume(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Remove sharing settings from a resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(
@@ -99,19 +109,22 @@ async def unshare_resume(
     # Remove sharing settings
     resume.is_public = False
     resume.share_token = None
-    db.commit()
+    await db.commit()
 
 @router.get("/{resume_id}/share-status", response_model=ResumeShareResponse)
 async def get_share_status(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the current sharing status of a resume."""
-    resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    resume = result.scalars().first()
     
     if not resume:
         raise HTTPException(

@@ -20,27 +20,27 @@ class IUserRepository(ABC):
     """Port for user persistence operations."""
 
     @abstractmethod
-    def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
+    async def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
         """Return a user by primary key, or None."""
         ...
 
     @abstractmethod
-    def get_by_email(self, email: str) -> Optional[UserEntity]:
+    async def get_by_email(self, email: str) -> Optional[UserEntity]:
         """Return a user by email, or None."""
         ...
 
     @abstractmethod
-    def create(self, entity: UserEntity) -> UserEntity:
+    async def create(self, entity: UserEntity) -> UserEntity:
         """Persist a new user and return the saved entity."""
         ...
 
     @abstractmethod
-    def update(self, entity: UserEntity) -> UserEntity:
+    async def update(self, entity: UserEntity) -> UserEntity:
         """Update an existing user and return the saved entity."""
         ...
 
     @abstractmethod
-    def delete(self, user_id: uuid.UUID) -> bool:
+    async def delete(self, user_id: uuid.UUID) -> bool:
         """Delete a user. Return True if deleted, False if not found."""
         ...
 
@@ -49,12 +49,12 @@ class IResumeRepository(ABC):
     """Port for resume persistence operations."""
 
     @abstractmethod
-    def get_by_id(self, resume_id: uuid.UUID) -> Optional[ResumeEntity]:
+    async def get_by_id(self, resume_id: uuid.UUID) -> Optional[ResumeEntity]:
         """Return a resume by primary key, or None."""
         ...
 
     @abstractmethod
-    def get_by_user_id(
+    async def get_by_user_id(
         self,
         user_id: uuid.UUID,
         *,
@@ -65,22 +65,22 @@ class IResumeRepository(ABC):
         ...
 
     @abstractmethod
-    def create(self, entity: ResumeEntity) -> ResumeEntity:
+    async def create(self, entity: ResumeEntity) -> ResumeEntity:
         """Persist a new resume and return the saved entity."""
         ...
 
     @abstractmethod
-    def update(self, entity: ResumeEntity) -> ResumeEntity:
+    async def update(self, entity: ResumeEntity) -> ResumeEntity:
         """Update an existing resume and return the saved entity."""
         ...
 
     @abstractmethod
-    def delete(self, resume_id: uuid.UUID) -> bool:
+    async def delete(self, resume_id: uuid.UUID) -> bool:
         """Delete a resume. Return True if deleted, False if not found."""
         ...
 
     @abstractmethod
-    def count_by_user_id(self, user_id: uuid.UUID) -> int:
+    async def count_by_user_id(self, user_id: uuid.UUID) -> int:
         """Return total number of resumes for a user."""
         ...
 
@@ -89,12 +89,12 @@ class IInterviewRepository(ABC):
     """Port for interview persistence operations."""
 
     @abstractmethod
-    def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
+    async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
         """Return an interview session by primary key, or None."""
         ...
 
     @abstractmethod
-    def get_sessions_by_user_id(
+    async def get_sessions_by_user_id(
         self,
         user_id: uuid.UUID,
         *,
@@ -105,27 +105,27 @@ class IInterviewRepository(ABC):
         ...
 
     @abstractmethod
-    def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
+    async def create_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         """Persist a new interview session and return the saved entity."""
         ...
 
     @abstractmethod
-    def update_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
+    async def update_session(self, entity: InterviewSessionEntity) -> InterviewSessionEntity:
         """Update an existing interview session."""
         ...
 
     @abstractmethod
-    def add_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
+    async def add_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
         """Persist a new interview question and return the saved entity."""
         ...
 
     @abstractmethod
-    def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
+    async def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
         """Update an existing interview question."""
         ...
 
     @abstractmethod
-    def get_questions_by_session_id(
+    async def get_questions_by_session_id(
         self, session_id: uuid.UUID
     ) -> List[InterviewQuestionEntity]:
         """Return all questions for a session."""

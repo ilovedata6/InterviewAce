@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime, timezone
 import shutil
@@ -17,15 +18,18 @@ router = APIRouter()
 @router.get("/{resume_id}/versions", response_model=ResumeVersionList)
 async def list_resume_versions(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """List all versions of a resume."""
     # Get the latest version of the resume
-    latest_resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    latest_resume = result.scalars().first()
     
     if not latest_resume:
         raise HTTPException(
@@ -45,7 +49,10 @@ async def list_resume_versions(
             parent_version_id=str(current.parent_version_id) if current.parent_version_id else None
         ))
         if current.parent_version_id:
-            current = db.query(Resume).filter(Resume.id == current.parent_version_id).first()
+            parent_result = await db.execute(
+                select(Resume).where(Resume.id == current.parent_version_id)
+            )
+            current = parent_result.scalars().first()
         else:
             current = None
     
@@ -57,15 +64,18 @@ async def list_resume_versions(
 @router.post("/{resume_id}/create-version", response_model=ResumeResponse)
 async def create_resume_version(
     resume_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Create a new version of a resume."""
     # Get the current version
-    current_resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    current_resume = result.scalars().first()
     
     if not current_resume:
         raise HTTPException(
@@ -94,8 +104,8 @@ async def create_resume_version(
     )
     
     db.add(new_version)
-    db.commit()
-    db.refresh(new_version)
+    await db.commit()
+    await db.refresh(new_version)
     
     return new_version
 
@@ -103,15 +113,18 @@ async def create_resume_version(
 async def get_resume_version(
     resume_id: str,
     version_number: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get a specific version of a resume."""
     # Get the latest version
-    latest_resume = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id
+        )
+    )
+    latest_resume = result.scalars().first()
     
     if not latest_resume:
         raise HTTPException(
@@ -123,7 +136,10 @@ async def get_resume_version(
     current = latest_resume
     while current and current.version != version_number:
         if current.parent_version_id:
-            current = db.query(Resume).filter(Resume.id == current.parent_version_id).first()
+            parent_result = await db.execute(
+                select(Resume).where(Resume.id == current.parent_version_id)
+            )
+            current = parent_result.scalars().first()
         else:
             current = None
     
@@ -139,16 +155,19 @@ async def get_resume_version(
 async def delete_resume_version(
     resume_id: str,
     version_number: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Delete a specific version of a resume."""
     # Get the version to delete
-    version = db.query(Resume).filter(
-        Resume.id == resume_id,
-        Resume.user_id == current_user.id,
-        Resume.version == version_number
-    ).first()
+    result = await db.execute(
+        select(Resume).where(
+            Resume.id == resume_id,
+            Resume.user_id == current_user.id,
+            Resume.version == version_number
+        )
+    )
+    version = result.scalars().first()
     
     if not version:
         raise HTTPException(
@@ -157,9 +176,12 @@ async def delete_resume_version(
         )
     
     # Check if this is the latest version
-    latest_version = db.query(Resume).filter(
-        Resume.parent_version_id == resume_id
-    ).first()
+    child_result = await db.execute(
+        select(Resume).where(
+            Resume.parent_version_id == resume_id
+        )
+    )
+    latest_version = child_result.scalars().first()
     
     if latest_version:
         raise HTTPException(
@@ -172,5 +194,5 @@ async def delete_resume_version(
         os.remove(version.file_path)
     
     # Delete the database record
-    db.delete(version)
-    db.commit()
+    await db.delete(version)
+    await db.commit()

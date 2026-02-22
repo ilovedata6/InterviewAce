@@ -9,7 +9,8 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.resume import ResumeEntity
 from app.domain.interfaces.repositories import IResumeRepository
@@ -19,7 +20,7 @@ from app.infrastructure.persistence.models.resume import Resume
 class ResumeRepository(IResumeRepository):
     """Concrete resume persistence backed by SQLAlchemy."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -80,36 +81,38 @@ class ResumeRepository(IResumeRepository):
     # Interface methods
     # ------------------------------------------------------------------
 
-    def get_by_id(self, resume_id: uuid.UUID) -> Optional[ResumeEntity]:
-        model = self._db.query(Resume).filter(Resume.id == resume_id).first()
+    async def get_by_id(self, resume_id: uuid.UUID) -> Optional[ResumeEntity]:
+        result = await self._db.execute(select(Resume).where(Resume.id == resume_id))
+        model = result.scalars().first()
         return self._to_entity(model) if model else None
 
-    def get_by_user_id(
+    async def get_by_user_id(
         self,
         user_id: uuid.UUID,
         *,
         skip: int = 0,
         limit: int = 50,
     ) -> List[ResumeEntity]:
-        models = (
-            self._db.query(Resume)
-            .filter(Resume.user_id == user_id)
+        result = await self._db.execute(
+            select(Resume)
+            .where(Resume.user_id == user_id)
             .order_by(Resume.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        models = result.scalars().all()
         return [self._to_entity(m) for m in models]
 
-    def create(self, entity: ResumeEntity) -> ResumeEntity:
+    async def create(self, entity: ResumeEntity) -> ResumeEntity:
         model = self._to_model(entity)
         self._db.add(model)
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._to_entity(model)
 
-    def update(self, entity: ResumeEntity) -> ResumeEntity:
-        model = self._db.query(Resume).filter(Resume.id == entity.id).first()
+    async def update(self, entity: ResumeEntity) -> ResumeEntity:
+        result = await self._db.execute(select(Resume).where(Resume.id == entity.id))
+        model = result.scalars().first()
         if model is None:
             raise ValueError(f"Resume {entity.id} not found")
         model.title = entity.title
@@ -124,17 +127,21 @@ class ResumeRepository(IResumeRepository):
         model.share_token = entity.share_token
         model.confidence_score = entity.confidence_score
         model.processing_time = entity.processing_time
-        self._db.commit()
-        self._db.refresh(model)
+        await self._db.commit()
+        await self._db.refresh(model)
         return self._to_entity(model)
 
-    def delete(self, resume_id: uuid.UUID) -> bool:
-        model = self._db.query(Resume).filter(Resume.id == resume_id).first()
+    async def delete(self, resume_id: uuid.UUID) -> bool:
+        result = await self._db.execute(select(Resume).where(Resume.id == resume_id))
+        model = result.scalars().first()
         if model is None:
             return False
-        self._db.delete(model)
-        self._db.commit()
+        await self._db.delete(model)
+        await self._db.commit()
         return True
 
-    def count_by_user_id(self, user_id: uuid.UUID) -> int:
-        return self._db.query(Resume).filter(Resume.user_id == user_id).count()
+    async def count_by_user_id(self, user_id: uuid.UUID) -> int:
+        result = await self._db.execute(
+            select(func.count()).select_from(Resume).where(Resume.user_id == user_id)
+        )
+        return result.scalar_one()
