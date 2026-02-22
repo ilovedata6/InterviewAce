@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.env.example` — all required environment variables with placeholder values
 - `pyproject.toml` — unified config for ruff, mypy, pytest, coverage
 - `backend_v2/` — new backend folder for upgraded implementation
+- Alembic migration system (`backend_v2/alembic/`) with initial schema migration
+- `alembic.ini` configured to read DATABASE_URL from app settings
+- `alembic/env.py` imports all ORM models for autogenerate support
 
 ### Changed
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
@@ -24,8 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `config.py` — ALLOWED_ORIGINS is now a proper Pydantic field with JSON/CSV parsing
 - `config.py` — removed all scattered `os.getenv()` calls; all config via pydantic-settings
 - `config.py` — SMTP_PORT changed from `str` to `int`
-- `config.py` — DATABASE_URL constructed via property instead of class-level f-string
+- `config.py` — DATABASE_URL constructed via `database_url` property instead of class-level f-string
+- `session.py` — uses `settings.database_url` property
+- `init_db.py` — removed `Base.metadata.create_all()` and `drop_db()`; schema now managed by Alembic
 - `middleware.py` — rate limiter reads from `settings.RATE_LIMIT` instead of hardcoded values
+- `requirements.txt` — added `alembic>=1.14.0`
 
 ### Security
 - Removed wildcard CORS (`allow_origins=["*"]`) from `main.py`

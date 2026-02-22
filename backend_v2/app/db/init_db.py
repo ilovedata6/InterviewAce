@@ -1,35 +1,32 @@
-from app.models.base import Base
-from app.db.session import engine
-from app.models.user import User
-from app.models.security import LoginAttempt, TokenBlacklist, UserSession, PasswordHistory
-from app.models.resume import Resume
-from app.models.interview import InterviewSession, InterviewQuestion
-from app.models.security import LoginAttempt, TokenBlacklist, UserSession
+"""
+Database initialization module.
+
+Schema creation is now handled by Alembic migrations.
+Use:  alembic upgrade head    — to apply all migrations
+      alembic downgrade -1    — to rollback one step
+      alembic revision --autogenerate -m "description"  — after model changes
+
+This module is kept for optional seed data and legacy compat.
+"""
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def init_db() -> None:
-    try:
-        # Create all tables
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created successfully")
-    except Exception as e:
-        logger.error(f"Error creating database tables: {str(e)}")
-        raise
 
-def drop_db() -> None:
-    try:
-        # Drop all tables
-        Base.metadata.drop_all(bind=engine)
-        logger.info("Database tables dropped successfully")
-    except Exception as e:
-        logger.error(f"Error dropping database tables: {str(e)}")
-        raise
+def init_db() -> None:
+    """
+    Initialize the database.
+
+    Schema is managed by Alembic migrations — run `alembic upgrade head`.
+    This function can be used for seeding initial data if needed.
+    """
+    logger.info(
+        "Database schema is managed by Alembic. "
+        "Run 'alembic upgrade head' from backend_v2/ to apply migrations."
+    )
+
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "--drop":
-        drop_db()
-    init_db() 
+    init_db()
