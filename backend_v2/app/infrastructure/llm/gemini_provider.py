@@ -8,8 +8,8 @@ so responses are cleaned of markdown fences before parsing.
 from __future__ import annotations
 
 import json
-import logging
 import re
+import structlog
 from typing import Any, Dict, List
 
 from google import genai
@@ -17,7 +17,7 @@ from google import genai
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.exceptions import LLMProviderError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _clean_gemini_json(raw: str) -> str:
@@ -37,7 +37,7 @@ class GeminiProvider(ILLMProvider):
             raise ValueError("GEMINI_API_KEY is required for GeminiProvider")
         self._model = model
         self._client = genai.Client(api_key=api_key)
-        logger.info("GeminiProvider initialized (model=%s)", model)
+        logger.info("gemini_provider_initialized", model=model)
 
     # ------------------------------------------------------------------
     # ILLMProvider interface
@@ -75,18 +75,18 @@ class GeminiProvider(ILLMProvider):
                 elif isinstance(item, str):
                     question_texts.append(item)
                 else:
-                    logger.warning("Unexpected item in Gemini question list: %r", item)
+                    logger.warning("unexpected_question_item", item=repr(item))
 
             logger.info(
-                "Gemini generated %d questions (model=%s)", len(question_texts), self._model
+                "gemini_questions_generated", count=len(question_texts), model=self._model
             )
             return question_texts
 
         except json.JSONDecodeError as exc:
-            logger.error("Gemini returned invalid JSON: %s", exc)
+            logger.error("gemini_json_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"Gemini JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Gemini error in generate_questions: %s", exc)
+            logger.error("gemini_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"Gemini generate_questions failed: {exc}") from exc
 
     def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
@@ -103,14 +103,14 @@ class GeminiProvider(ILLMProvider):
 
             cleaned = _clean_gemini_json(raw)
             result = json.loads(cleaned)
-            logger.info("Gemini generated feedback (model=%s)", self._model)
+            logger.info("gemini_feedback_generated", model=self._model)
             return result
 
         except json.JSONDecodeError as exc:
-            logger.error("Gemini returned invalid JSON for feedback: %s", exc)
+            logger.error("gemini_json_error", method="generate_feedback", error=str(exc))
             raise LLMProviderError(f"Gemini JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Gemini error in generate_feedback: %s", exc)
+            logger.error("gemini_error", method="generate_feedback", error=str(exc))
             raise LLMProviderError(f"Gemini generate_feedback failed: {exc}") from exc
 
     def generate_completion(self, prompt: str) -> str:
@@ -121,11 +121,11 @@ class GeminiProvider(ILLMProvider):
                 contents=[prompt],
             )
             text = (response.text or "").strip()
-            logger.info("Gemini completion generated (model=%s)", self._model)
+            logger.info("gemini_completion_generated", model=self._model)
             return text
 
         except Exception as exc:
-            logger.error("Gemini error in generate_completion: %s", exc)
+            logger.error("gemini_error", method="generate_completion", error=str(exc))
             raise LLMProviderError(f"Gemini generate_completion failed: {exc}") from exc
 
     def parse_resume(self, text: str) -> Dict[str, Any]:
@@ -164,12 +164,12 @@ class GeminiProvider(ILLMProvider):
             raw = (response.text or "").strip()
             cleaned = _clean_gemini_json(raw)
             result = json.loads(cleaned)
-            logger.info("Gemini resume parse completed (model=%s)", self._model)
+            logger.info("gemini_resume_parsed", model=self._model)
             return result
 
         except json.JSONDecodeError as exc:
-            logger.error("Gemini JSON decode error for resume parse: %s", exc)
+            logger.error("gemini_json_error", method="parse_resume", error=str(exc))
             raise LLMProviderError(f"Gemini JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Gemini error in parse_resume: %s", exc)
+            logger.error("gemini_error", method="parse_resume", error=str(exc))
             raise LLMProviderError(f"Gemini parse_resume failed: {exc}") from exc

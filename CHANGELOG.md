@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UPGRADES.md` — comprehensive backend upgrade plan (23 items)
 - `Planner.md` — phased implementation plan (15 phases, one feature at a time)
 - `CHANGELOG.md` — this file
+- **Structured Logging** (Phase 5):
+  - `structlog>=24.0.0` added to requirements — JSON logs in production, coloured console in development
+  - `app/core/logging_config.py` — `setup_logging()` configures structlog pipeline + stdlib integration
+  - `RequestIDMiddleware` — generates UUID per request, propagates via `structlog.contextvars`, adds `X-Request-ID` response header
+  - `RequestLoggingMiddleware` — logs method, path, status, and duration (ms) for every request
+  - Migrated 7 files from `logging.getLogger` to `structlog.get_logger` with structured key=value format:
+    `openai_provider.py`, `gemini_provider.py`, `factory.py`, `ai_analyzer.py`, `resume_parser.py`, `interview_orchestrator.py`, `llm_client.py`
+  - `GET /health` liveness probe (returns `{"status": "healthy"}`)
+  - `GET /ready` readiness probe (checks DB connectivity via `SELECT 1`)
+  - `app/api/health.py` — health router mounted at root (no `/api/v1` prefix)
+- **Testing Foundation** (Phase 6):
+  - Test dependencies added: `pytest>=8.0.0`, `pytest-asyncio>=0.24.0`, `httpx>=0.27.0`, `factory-boy>=3.3.0`, `coverage>=7.0.0`, `aiosqlite>=0.20.0`
+  - `backend_v2/tests/conftest.py` — shared fixtures: in-memory async SQLite, HTTPX `AsyncClient`, `test_user`, `auth_token`, `MockLLMProvider`
+  - `pyproject.toml` — `testpaths` updated to `backend_v2/tests`
+  - Unit tests: `test_security.py` (password complexity, hashing, JWT, CSRF, email verification tokens)
+  - Unit tests: `test_llm_factory.py` (fallback chain: primary success, primary fail → fallback, both fail, factory function)
+  - Integration tests: `test_auth.py` (register, login, /me, refresh, logout, duplicate registration, invalid credentials)
+  - Integration tests: `test_interview.py` (start session with mock LLM, next question, answer, complete — with error cases)
+  - Integration tests: `test_resume.py` (upload with mock LLM, validation errors, unauthenticated)
+  - Integration tests: `test_health.py` (liveness and readiness probes)
 - `.env.example` — all required environment variables with placeholder values
 - `pyproject.toml` — unified config for ruff, mypy, pytest, coverage
 - `backend_v2/` — new backend folder for upgraded implementation

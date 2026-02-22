@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 import time
+import uuid
 from typing import Dict, List
+
+import structlog
+
 from app.core.config import settings
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -59,6 +63,44 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """
+    Generate a unique request ID for every incoming request.
+
+    * Stores the ID in ``structlog.contextvars`` so every log line
+      within the request automatically includes ``request_id``.
+    * Copies the ID to the ``X-Request-ID`` response header so clients
+      and load-balancers can correlate logs.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Log every request/response with method, path, status and duration."""
+
+    async def dispatch(self, request: Request, call_next):
+        logger = structlog.get_logger("http.access")
+        start = time.time()
+        response = await call_next(request)
+        duration_ms = round((time.time() - start) * 1000, 2)
+        logger.info(
+            "request",
+            method=request.method,
+            path=str(request.url.path),
+            status=response.status_code,
+            duration_ms=duration_ms,
+        )
+        return response
+
+
 def setup_middleware(app: FastAPI):
     # CORS middleware
     app.add_middleware(
@@ -74,3 +116,9 @@ def setup_middleware(app: FastAPI):
 
     # Rate limiting middleware
     app.add_middleware(RateLimitMiddleware) 
+
+    # Request ID middleware (outermost — runs first)
+    app.add_middleware(RequestIDMiddleware)
+
+    # Request logging middleware
+    app.add_middleware(RequestLoggingMiddleware)

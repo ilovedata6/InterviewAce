@@ -1,7 +1,7 @@
 # app/services/resume_parser.py
 
 import os
-import logging
+import structlog
 from typing import Dict, Any
 
 from fastapi import HTTPException, status
@@ -14,7 +14,7 @@ from app.schemas.resume import ResumeStatus, FileType
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.infrastructure.llm.factory import get_llm_provider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ─── Public API ────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ async def parse_and_store_resume(
     text = _extract_text(file_path)
     parsed = provider.parse_resume(text)
     if not parsed:
-        logger.warning("LLM parse returned empty result")
+        logger.warning("llm_parse_empty_result", file_path=file_path)
         parsed = {}
 
     _validate_mandatory(parsed, fields=("experience", "education", "skills"))

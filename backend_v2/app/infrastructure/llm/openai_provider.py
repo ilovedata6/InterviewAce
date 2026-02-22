@@ -8,7 +8,7 @@ for structured JSON output (no markdown fence cleaning needed).
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 from typing import Any, Dict, List
 
 from openai import OpenAI, APIError, APITimeoutError, RateLimitError
@@ -16,7 +16,7 @@ from openai import OpenAI, APIError, APITimeoutError, RateLimitError
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.exceptions import LLMProviderError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class OpenAIProvider(ILLMProvider):
@@ -37,7 +37,7 @@ class OpenAIProvider(ILLMProvider):
             timeout=timeout,
             max_retries=max_retries,
         )
-        logger.info("OpenAIProvider initialized (model=%s)", model)
+        logger.info("openai_provider_initialized", model=model)
 
     # ------------------------------------------------------------------
     # ILLMProvider interface
@@ -77,21 +77,21 @@ class OpenAIProvider(ILLMProvider):
                 elif isinstance(item, str):
                     question_texts.append(item)
                 else:
-                    logger.warning("Unexpected item in OpenAI question list: %r", item)
+                    logger.warning("unexpected_question_item", item=repr(item))
 
             logger.info(
-                "OpenAI generated %d questions (model=%s)", len(question_texts), self._model
+                "openai_questions_generated", count=len(question_texts), model=self._model
             )
             return question_texts
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
-            logger.error("OpenAI API error in generate_questions: %s", exc)
+            logger.error("openai_api_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_questions failed: {exc}") from exc
         except json.JSONDecodeError as exc:
-            logger.error("OpenAI returned invalid JSON: %s", exc)
+            logger.error("openai_json_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"OpenAI JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Unexpected OpenAI error in generate_questions: %s", exc)
+            logger.error("openai_unexpected_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_questions unexpected error: {exc}") from exc
 
     def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
@@ -110,17 +110,17 @@ class OpenAIProvider(ILLMProvider):
             )
             raw = response.choices[0].message.content or ""
             result = json.loads(raw)
-            logger.info("OpenAI generated feedback (model=%s)", self._model)
+            logger.info("openai_feedback_generated", model=self._model)
             return result
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
-            logger.error("OpenAI API error in generate_feedback: %s", exc)
+            logger.error("openai_api_error", method="generate_feedback", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_feedback failed: {exc}") from exc
         except json.JSONDecodeError as exc:
-            logger.error("OpenAI returned invalid JSON for feedback: %s", exc)
+            logger.error("openai_json_error", method="generate_feedback", error=str(exc))
             raise LLMProviderError(f"OpenAI JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Unexpected OpenAI error in generate_feedback: %s", exc)
+            logger.error("openai_unexpected_error", method="generate_feedback", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_feedback unexpected error: {exc}") from exc
 
     def generate_completion(self, prompt: str) -> str:
@@ -134,14 +134,14 @@ class OpenAIProvider(ILLMProvider):
                 temperature=0.7,
             )
             text = response.choices[0].message.content or ""
-            logger.info("OpenAI completion generated (model=%s)", self._model)
+            logger.info("openai_completion_generated", model=self._model)
             return text.strip()
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
-            logger.error("OpenAI API error in generate_completion: %s", exc)
+            logger.error("openai_api_error", method="generate_completion", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_completion failed: {exc}") from exc
         except Exception as exc:
-            logger.error("Unexpected OpenAI error in generate_completion: %s", exc)
+            logger.error("openai_unexpected_error", method="generate_completion", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_completion unexpected error: {exc}") from exc
 
     def parse_resume(self, text: str) -> Dict[str, Any]:
@@ -178,15 +178,15 @@ class OpenAIProvider(ILLMProvider):
             )
             raw = response.choices[0].message.content or ""
             result = json.loads(raw)
-            logger.info("OpenAI resume parse completed (model=%s)", self._model)
+            logger.info("openai_resume_parsed", model=self._model)
             return result
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
-            logger.error("OpenAI API error in parse_resume: %s", exc)
+            logger.error("openai_api_error", method="parse_resume", error=str(exc))
             raise LLMProviderError(f"OpenAI parse_resume failed: {exc}") from exc
         except json.JSONDecodeError as exc:
-            logger.error("OpenAI returned invalid JSON for resume parse: %s", exc)
+            logger.error("openai_json_error", method="parse_resume", error=str(exc))
             raise LLMProviderError(f"OpenAI JSON decode error: {exc}") from exc
         except Exception as exc:
-            logger.error("Unexpected OpenAI error in parse_resume: %s", exc)
+            logger.error("openai_unexpected_error", method="parse_resume", error=str(exc))
             raise LLMProviderError(f"OpenAI parse_resume unexpected error: {exc}") from exc

@@ -7,13 +7,13 @@ Backward-compatibility shim — delegates to the new LLM provider infrastructure
 
 from __future__ import annotations
 
-import logging
+import structlog
 import warnings
 from typing import Any, Dict, List
 
 from app.infrastructure.llm.factory import get_llm_provider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class LLMClient:

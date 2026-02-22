@@ -11,7 +11,7 @@ Usage::
 
 from __future__ import annotations
 
-import logging
+import structlog
 from typing import Any, Dict, List
 
 from app.core.config import settings
@@ -20,7 +20,7 @@ from app.domain.interfaces.llm_provider import ILLMProvider
 from app.infrastructure.llm.openai_provider import OpenAIProvider
 from app.infrastructure.llm.gemini_provider import GeminiProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class LLMProviderWithFallback(ILLMProvider):
@@ -35,9 +35,9 @@ class LLMProviderWithFallback(ILLMProvider):
         self._primary = primary
         self._fallback = fallback
         logger.info(
-            "LLMProviderWithFallback: primary=%s, fallback=%s",
-            primary.provider_name,
-            fallback.provider_name,
+            "llm_fallback_chain_initialized",
+            primary=primary.provider_name,
+            fallback=fallback.provider_name,
         )
 
     @property
@@ -54,19 +54,19 @@ class LLMProviderWithFallback(ILLMProvider):
             return getattr(self._primary, method_name)(*args, **kwargs)
         except LLMProviderError as exc:
             logger.warning(
-                "Primary provider (%s) failed for %s: %s — falling back to %s",
-                self._primary.provider_name,
-                method_name,
-                exc,
-                self._fallback.provider_name,
+                "primary_provider_failed",
+                provider=self._primary.provider_name,
+                method=method_name,
+                error=str(exc),
+                fallback=self._fallback.provider_name,
             )
             try:
                 return getattr(self._fallback, method_name)(*args, **kwargs)
             except LLMProviderError:
                 logger.error(
-                    "Fallback provider (%s) also failed for %s",
-                    self._fallback.provider_name,
-                    method_name,
+                    "fallback_provider_failed",
+                    provider=self._fallback.provider_name,
+                    method=method_name,
                 )
                 raise
 

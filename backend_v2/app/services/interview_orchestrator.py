@@ -1,4 +1,4 @@
-import logging
+import structlog
 from typing import List, cast
 from uuid import UUID
 from sqlalchemy import select
@@ -14,7 +14,7 @@ from app.models.user import User
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 class InterviewOrchestrator:
     def __init__(self, db: AsyncSession, llm_provider: ILLMProvider | None = None):
@@ -45,13 +45,13 @@ class InterviewOrchestrator:
 
     def generate_questions(self, session: InterviewSession, resume_context: dict) -> List[InterviewQuestionCreate]:
         try:
-            logger.info(f"Generating questions for session {session.id} with context: {resume_context}")
+            logger.info("generating_questions", session_id=str(session.id))
             prompt = self._build_prompt(resume_context)
             questions = self.llm_provider.generate_questions(prompt)
-            logger.info(f"LLM response for session {session.id}: {questions}")
+            logger.info("questions_generated", session_id=str(session.id), count=len(questions))
             return self._map_questions_to_schema(cast(UUID, session.id), questions)
         except Exception as e:
-            logger.error(f"LLM call failed for session {session.id}: {e}")
+            logger.error("llm_call_failed", session_id=str(session.id), error=str(e))
             raise
 
     def _build_prompt(self, resume_context: dict) -> dict:
@@ -97,7 +97,7 @@ class InterviewOrchestrator:
         return [InterviewQuestionCreate(session_id=session_id, question_text=q) for q in questions]
 
     async def persist_questions(self, session: InterviewSession, questions: List[InterviewQuestionCreate]):
-        logger.info(f"Persisting {len(questions)} questions for session {session.id}")
+        logger.info("persisting_questions", session_id=str(session.id), count=len(questions))
         for question_schema in questions:
             question = InterviewQuestion(
                 session_id=question_schema.session_id,
@@ -105,7 +105,7 @@ class InterviewOrchestrator:
             )
             self.db.add(question)
         await self.db.commit()
-        logger.info(f"Successfully persisted questions for session {session.id}")
+        logger.info("questions_persisted", session_id=str(session.id))
 
 async def get_user_session(db: AsyncSession, user: User, session_id: UUID):
     result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
