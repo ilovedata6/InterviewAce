@@ -23,6 +23,8 @@ logger = structlog.get_logger(__name__)
     "/",
     response_model=ResumeUploadResponse,
     status_code=status.HTTP_202_ACCEPTED,
+    summary="Upload a resume",
+    response_description="Accepted — resume ID and background task ID for polling.",
 )
 @limiter.limit("10/minute")
 async def upload_resume(

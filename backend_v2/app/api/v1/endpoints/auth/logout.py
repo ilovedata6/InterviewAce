@@ -12,12 +12,22 @@ from app.schemas.base import Message
 
 router = APIRouter()
 
-@router.post("/logout", response_model=Message)
+@router.post(
+    "/logout",
+    response_model=Message,
+    summary="Log out current user",
+    response_description="Logout confirmation.",
+)
 async def logout(
     request: Request,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Revoke the current access/refresh token pair and deactivate the session.
+
+    Raises:
+        401: Missing or invalid authorization header.
+    """
     try:
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):

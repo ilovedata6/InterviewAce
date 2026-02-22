@@ -11,13 +11,22 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/history", response_model=PaginatedResponse[InterviewSessionInDB])
+@router.get(
+    "/history",
+    response_model=PaginatedResponse[InterviewSessionInDB],
+    summary="List interview history",
+    response_description="Paginated list of past interview sessions.",
+)
 async def get_interview_history(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(10, ge=1, le=100, description="Max records to return"),
 ):
+    """List all interview sessions for the authenticated user.
+
+    Supports offset-based pagination via `skip` and `limit`.
+    """
     # Total count
     count_result = await db.execute(
         select(func.count())

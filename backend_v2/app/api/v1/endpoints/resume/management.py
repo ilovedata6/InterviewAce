@@ -21,16 +21,24 @@ from app.core.config import settings
 
 router = APIRouter()
 
-@router.get("/", response_model=PaginatedResponse[ResumeResponse])
+@router.get(
+    "/",
+    response_model=PaginatedResponse[ResumeResponse],
+    summary="List resumes",
+    response_description="Paginated list of resumes owned by the authenticated user.",
+)
 async def list_resumes(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(10, ge=1, le=100, description="Max records to return"),
     status_filter: Optional[ResumeStatus] = Query(None, alias="status"),
-    search: Optional[str] = None
+    search: Optional[str] = None,
 ):
-    """List all resumes for the current user with pagination and filtering."""
+    """List all resumes for the current user with pagination and optional filtering.
+
+    Filter by `status` (PENDING, COMPLETED, FAILED) or full-text `search` on title/description.
+    """
     stmt = select(Resume).where(Resume.user_id == current_user.id)
     count_stmt = select(func.count()).select_from(Resume).where(Resume.user_id == current_user.id)
     
@@ -60,13 +68,22 @@ async def list_resumes(
         has_more=(skip + limit) < total,
     )
 
-@router.get("/{resume_id}", response_model=ResumeResponse)
+@router.get(
+    "/{resume_id}",
+    response_model=ResumeResponse,
+    summary="Get a resume",
+    response_description="Resume details.",
+)
 async def get_resume(
     resume_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    """Get a specific resume by ID."""
+    """Get a specific resume by ID.
+
+    Raises:
+        404: Resume not found or not owned by the user.
+    """
     result = await db.execute(
         select(Resume).where(
             Resume.id == resume_id,
@@ -83,14 +100,23 @@ async def get_resume(
     
     return resume
 
-@router.put("/{resume_id}", response_model=ResumeResponse)
+@router.put(
+    "/{resume_id}",
+    response_model=ResumeResponse,
+    summary="Update resume metadata",
+    response_description="Updated resume details.",
+)
 async def update_resume(
     resume_id: str,
     resume_update: ResumeUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    """Update resume metadata."""
+    """Update resume metadata (title, description).
+
+    Raises:
+        404: Resume not found or not owned by the user.
+    """
     result = await db.execute(
         select(Resume).where(
             Resume.id == resume_id,
@@ -115,13 +141,22 @@ async def update_resume(
     
     return resume
 
-@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{resume_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a resume",
+    response_description="No content.",
+)
 async def delete_resume(
     resume_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    """Delete a resume and its associated file."""
+    """Delete a resume and its associated file from disk.
+
+    Raises:
+        404: Resume not found or not owned by the user.
+    """
     result = await db.execute(
         select(Resume).where(
             Resume.id == resume_id,

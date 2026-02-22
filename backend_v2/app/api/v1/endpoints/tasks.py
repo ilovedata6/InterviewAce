@@ -23,7 +23,12 @@ class TaskStatusResponse(BaseModel):
     error: Optional[str] = None
 
 
-@router.get("/tasks/{task_id}", response_model=TaskStatusResponse)
+@router.get(
+    "/tasks/{task_id}",
+    response_model=TaskStatusResponse,
+    summary="Poll task status",
+    response_description="Current status, result, or error of the background task.",
+)
 async def get_task_status(task_id: str):
     """
     Poll the status of a Celery background task.

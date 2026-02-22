@@ -6,8 +6,18 @@ from app.schemas.auth import Token
 
 router = APIRouter()
 
-@router.post("/refresh", response_model=Token)
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh access token",
+    response_description="New JWT access and refresh tokens.",
+)
 async def refresh_token(request: Request, db: AsyncSession = Depends(get_db)):
+    """Exchange a valid refresh token for a new access/refresh pair.
+
+    Raises:
+        401: Missing, expired, or revoked refresh token.
+    """
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(

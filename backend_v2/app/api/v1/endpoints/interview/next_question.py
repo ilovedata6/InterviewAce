@@ -9,12 +9,25 @@ from app.services.interview_orchestrator import get_user_session, get_next_quest
 
 router = APIRouter()
 
-@router.get("/{session_id}/next", response_model=QuestionOut, status_code=200)
+@router.get(
+    "/{session_id}/next",
+    response_model=QuestionOut,
+    status_code=200,
+    summary="Get next question",
+    response_description="The next unanswered question, or 204 if none remain.",
+)
 async def get_next_question_route(
     session_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    """Retrieve the next unanswered question in the interview session.
+
+    Returns 204 No Content when all questions have been answered.
+
+    Raises:
+        404: Session not found or not owned by the user.
+    """
     # Get session and check ownership
     session = await get_user_session(db, current_user, session_id)
     if not session:

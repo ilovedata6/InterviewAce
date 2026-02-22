@@ -13,12 +13,25 @@ from app.models.user import User  # Import the User model
 
 router = APIRouter()
 
-@router.post("", response_model=InterviewSessionInDB)
+@router.post(
+    "",
+    response_model=InterviewSessionInDB,
+    summary="Start an interview session",
+    response_description="The newly created interview session with generated questions.",
+)
 async def start_interview_session(
     session_data: InterviewSessionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # Note: This returns a User object
+    current_user: User = Depends(get_current_user),
 ):
+    """Create a new interview session linked to the user's latest resume.
+
+    Generates 12-15 AI-powered questions (technical, behavioral, project-based).
+
+    Raises:
+        404: No resume found — upload one first.
+        500: Question generation failed.
+    """
     # Get user's most recent resume
     result = await db.execute(
         select(Resume)

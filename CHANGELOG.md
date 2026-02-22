@@ -9,7 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+*(nothing yet)*
+
+---
+
+## [2.0.0] - 2025-07-01
+
 ### Added
+- **OpenAPI documentation enrichment** (Phase 14):
+  - `openapi_tags` with descriptions for all 5 tag groups (authentication, interview, resume, tasks, health)
+  - `license_info` (MIT) and `contact` metadata on the FastAPI app
+  - `summary` and `response_description` on every endpoint decorator
+  - Docstrings with error response documentation on all 22 route handlers
 - `UPGRADES.md` — comprehensive backend upgrade plan (23 items)
 - `Planner.md` — phased implementation plan (15 phases, one feature at a time)
 - `CHANGELOG.md` — this file
@@ -102,6 +113,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pool tuning: `pool_pre_ping=True`, `pool_size=10`, `max_overflow=20`, `expire_on_commit=False`
 
 ### Changed
+- `Docs/ARCHITECTURE.md` rewritten for v2 (async stack, Redis, Celery, Sentry, LLM fallback, RBAC)
+- `backend_v2/Docs/ARCHITECTURE.md` updated: removed stale `application/`, `domain/services/`, `infrastructure/storage/`, `infrastructure/email/` references; added `cache/` and `tasks/` directories
+- `README.md` updated with v2 tech stack, setup instructions (Redis, Celery, Alembic), and project structure
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
 - `config.py` — SECRET_KEY now required with strong validation (min 32 chars, no insecure defaults)
 - `config.py` — added OPENAI_API_KEY, OPENAI_MODEL, GEMINI_MODEL, ENVIRONMENT, REDIS_URL, SENTRY_DSN settings
@@ -144,6 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Module-level `hf_ner = pipeline("ner", ...)` in `resume_parser.py` (no longer downloads 1.3 GB model on import)
 - `_parse_with_gemini()`, `_fallback_parse()`, `clean_gemini_json()` functions from `resume_parser.py`
 - Direct Gemini SDK usage from `llm_client.py` and `interview_orchestrator.py`
+- Dead code removed: `app/utils/llm_client.py` (deprecated shim), `app/application/` (empty placeholders), `app/domain/services/` (empty), `app/infrastructure/email/` (empty), `app/infrastructure/storage/` (empty)
 
 ### Security
 - Removed wildcard CORS (`allow_origins=["*"]`) from `main.py`

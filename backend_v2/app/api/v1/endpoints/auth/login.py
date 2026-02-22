@@ -16,13 +16,27 @@ from app.schemas.auth import Token
 
 router = APIRouter()
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Authenticate user",
+    response_description="JWT access and refresh tokens.",
+)
 @limiter.limit("5/minute")
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Authenticate with email and password.
+
+    Returns a JWT access token (15 min) and a refresh token (7 days).
+
+    Raises:
+        401: Incorrect email or password.
+        403: Email not yet verified.
+        429: Rate limit exceeded (5 req/min).
+    """
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
     if not user:

@@ -20,20 +20,27 @@ logger = structlog.get_logger(__name__)
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    summary="Liveness probe",
+    response_description="Service is alive.",
+)
 async def health() -> dict:
-    """
-    Liveness probe — returns 200 if the process is running.
+    """Liveness probe — returns 200 if the process is running.
+
     No external dependency checks.
     """
     return {"status": "healthy"}
 
 
-@router.get("/ready")
+@router.get(
+    "/ready",
+    summary="Readiness probe",
+    response_description="Service readiness status with dependency checks.",
+)
 async def ready() -> dict:
-    """
-    Readiness probe — returns 200 only when the application can serve
-    traffic (database + Redis reachable).
+    """Readiness probe — returns 200 only when the application can serve
+    traffic (database + Redis reachable). Returns 503 otherwise.
     """
     checks: dict = {}
 

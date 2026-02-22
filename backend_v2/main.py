@@ -38,11 +38,39 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="AI-powered interview preparation platform",
+    description=(
+        "AI-powered interview preparation platform.  Upload your resume, "
+        "run personalised mock interviews, and receive detailed AI feedback — "
+        "all through a single REST API."
+    ),
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
+    license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
+    contact={"name": "InterviewAce Team", "url": "https://github.com/interviewace"},
+    openapi_tags=[
+        {
+            "name": "authentication",
+            "description": "Register, login, token refresh, password management, and email verification.",
+        },
+        {
+            "name": "interview",
+            "description": "Start mock-interview sessions, submit answers, and retrieve AI-generated feedback.",
+        },
+        {
+            "name": "resume",
+            "description": "Upload, list, update, and delete resumes. Parsing runs asynchronously via Celery.",
+        },
+        {
+            "name": "tasks",
+            "description": "Poll the status of long-running background tasks (e.g. resume parsing).",
+        },
+        {
+            "name": "health",
+            "description": "Liveness and readiness probes for load-balancers and orchestrators.",
+        },
+    ],
 )
 
 # Set up all middleware (CORS, security headers, rate limiting, request ID)

@@ -10,9 +10,24 @@ from app.utils.email_utils import send_verification_email
 
 router = APIRouter()
 
-@router.post("/register", response_model=VerificationResponse)
+@router.post(
+    "/register",
+    response_model=VerificationResponse,
+    summary="Register a new account",
+    response_description="Confirmation with email verification instructions.",
+)
 @limiter.limit("10/minute")
-async def register(request: Request, user: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(
+    request: Request,
+    user: UserCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new user account and send a verification email.
+
+    Raises:
+        400: Email already registered.
+        429: Rate limit exceeded (10 req/min).
+    """
     result = await db.execute(select(User).where(User.email == user.email))
     db_user = result.scalars().first()
     if db_user:

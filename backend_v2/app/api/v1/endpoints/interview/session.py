@@ -10,12 +10,22 @@ from app.models.interview import InterviewSession
 
 router = APIRouter()
 
-@router.get("/{session_id}", response_model=InterviewSessionInDB)
+@router.get(
+    "/{session_id}",
+    response_model=InterviewSessionInDB,
+    summary="Get interview session",
+    response_description="Interview session details.",
+)
 async def get_interview_session(
     session_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    """Retrieve a specific interview session by ID.
+
+    Raises:
+        404: Session not found or not owned by the user.
+    """
     result = await db.execute(
         select(InterviewSession).where(
             InterviewSession.id == session_id,

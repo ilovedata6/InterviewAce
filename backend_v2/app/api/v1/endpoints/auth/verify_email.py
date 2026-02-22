@@ -8,11 +8,21 @@ from app.models.user import User
 
 router = APIRouter()
 
-@router.post("/verify-email", response_model=VerificationResponse)
+@router.post(
+    "/verify-email",
+    response_model=VerificationResponse,
+    summary="Verify email address",
+    response_description="Verification result.",
+)
 async def verify_email(
     payload: EmailVerificationRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Confirm a user's email address using a one-time verification token.
+
+    Raises:
+        400: Invalid or expired verification token.
+    """
     try:
         user_id = verify_email_verification_token(payload.token)
     except Exception:

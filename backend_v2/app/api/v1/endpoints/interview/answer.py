@@ -9,14 +9,27 @@ from app.services.interview_orchestrator import get_user_session, submit_answer
 
 router = APIRouter()
 
-@router.post("/{session_id}/{question_id}/answer", status_code=200)
+@router.post(
+    "/{session_id}/{question_id}/answer",
+    status_code=200,
+    summary="Submit an answer",
+    response_description="The next question, or 204 if session is complete.",
+)
 async def answer_question(
     session_id: UUID,
     question_id: UUID,
     answer_in: AnswerIn,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    """Submit an answer to a specific interview question.
+
+    Returns the next unanswered question or 204 No Content when all
+    questions have been answered.
+
+    Raises:
+        404: Session not found or not owned by the user.
+    """
     session = await get_user_session(db, current_user, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or not owned by user")
