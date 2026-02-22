@@ -68,3 +68,6 @@ slowapi>=0.1.9
 
 # ── Background Tasks (Phase 8) ───────────────────────────────────────────
 celery[redis]>=5.4.0
+
+# ── Error Monitoring (Phase 9) ───────────────────────────────────────────
+sentry-sdk[fastapi]>=2.0.0

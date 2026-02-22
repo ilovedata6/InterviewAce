@@ -15,17 +15,18 @@ from app.schemas.resume import (
     ResumeList,
     ResumeStatus
 )
+from app.schemas.base import PaginatedResponse
 from app.api.deps import get_current_user
 from app.core.config import settings
 
 router = APIRouter()
 
-@router.get("/", response_model=ResumeList)
+@router.get("/", response_model=PaginatedResponse[ResumeResponse])
 async def list_resumes(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Max records to return"),
     status_filter: Optional[ResumeStatus] = Query(None, alias="status"),
     search: Optional[str] = None
 ):
@@ -51,12 +52,12 @@ async def list_resumes(
     )
     resumes = result.scalars().all()
     
-    return ResumeList(
-        resumes=resumes,
+    return PaginatedResponse(
+        items=resumes,
         total=total,
-        page=skip // limit + 1,
-        page_size=limit,
-        total_pages=(total + limit - 1) // limit
+        skip=skip,
+        limit=limit,
+        has_more=(skip + limit) < total,
     )
 
 @router.get("/{resume_id}", response_model=ResumeResponse)

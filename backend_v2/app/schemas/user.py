@@ -3,6 +3,9 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
+from app.domain.value_objects.enums import UserRole
+
+
 class UserBase(BaseModel):
     name: str
     email: EmailStr
@@ -15,6 +18,7 @@ class UserUpdate(UserBase):
 
 class UserInDB(UserBase):
     id: UUID
+    role: UserRole = UserRole.USER
     created_at: datetime
     updated_at: datetime
 

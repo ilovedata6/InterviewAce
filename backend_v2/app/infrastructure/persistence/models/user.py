@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy.orm import relationship
 
 from app.infrastructure.persistence.models.base import Base, TimestampMixin
+from app.domain.value_objects.enums import UserRole
 
 
 class User(Base, TimestampMixin):
@@ -16,4 +17,5 @@ class User(Base, TimestampMixin):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_email_verified = Column(Boolean, default=False)
+    role = Column(String, nullable=False, default=UserRole.USER.value)
     resumes = relationship("Resume", back_populates="user")

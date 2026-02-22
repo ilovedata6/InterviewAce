@@ -43,12 +43,12 @@ class TestResumeUpload:
                 "app.api.v1.endpoints.resume.upload.parse_resume_task"
             ) as mock_task,
             patch(
-                "app.utils.file_handler.validate_file",  # skip extension/size check
+                "app.api.v1.endpoints.resume.upload.validate_file",  # skip extension/size check
             ),
             patch(
-                "app.utils.file_handler.save_upload_file",  # don't write to disk
+                "app.api.v1.endpoints.resume.upload.save_upload_file",  # don't write to disk
             ),
-            patch("os.path.getsize", return_value=2048),
+            patch("app.api.v1.endpoints.resume.upload.os.path.getsize", return_value=2048),
         ):
             mock_task.delay.return_value = mock_task_result
 

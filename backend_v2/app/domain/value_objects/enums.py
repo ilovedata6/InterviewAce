@@ -24,3 +24,11 @@ class FileType(str, Enum):
     DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     DOC = "application/msword"
     TXT = "text/plain"
+
+
+class UserRole(str, Enum):
+    """User roles for RBAC."""
+
+    USER = "user"
+    ADMIN = "admin"
+    MODERATOR = "moderator"

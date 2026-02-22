@@ -132,7 +132,7 @@ class Settings(BaseSettings):
     # ── Redis (future: rate limiting, token blacklist, Celery) ─────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # ── Sentry (future: error monitoring) ─────────────────────────────────
+    # ── Sentry (error monitoring — leave empty to disable) ────────────────
     SENTRY_DSN: str = ""
 
     model_config = {

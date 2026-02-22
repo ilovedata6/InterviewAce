@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.logging_config import setup_logging
@@ -10,6 +11,19 @@ from app.core.exceptions import register_exception_handlers
 
 # Configure structured logging before anything else
 setup_logging()
+
+# ── Sentry error monitoring ───────────────────────────────────────────────
+# Only initialised when SENTRY_DSN is provided (disabled in local dev).
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        release=f"interviewace@{settings.VERSION}",
+        traces_sample_rate=1.0 if settings.ENVIRONMENT == "development" else 0.2,
+        profiles_sample_rate=0.1,
+        send_default_pii=False,
+        enable_tracing=True,
+    )
 
 
 @asynccontextmanager

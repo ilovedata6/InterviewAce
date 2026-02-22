@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UPGRADES.md` — comprehensive backend upgrade plan (23 items)
 - `Planner.md` — phased implementation plan (15 phases, one feature at a time)
 - `CHANGELOG.md` — this file
+- **Sentry Error Monitoring** (Phase 9):
+  - `sentry-sdk[fastapi]>=2.0.0` added to requirements
+  - Sentry initialised in `main.py` when `SENTRY_DSN` is set (disabled by default in local dev)
+  - Environment-aware config: `ENVIRONMENT` setting (`development`/`staging`/`production`) drives `traces_sample_rate` (100% dev, 20% prod)
+  - Release tagging with `interviewace@{VERSION}` for deploy tracking
+  - PII stripping enabled (`send_default_pii=False`)
+- **Pagination + RBAC** (Phase 10):
+  - `PaginatedResponse[T]` generic schema in `app/schemas/base.py` — `items`, `total`, `skip`, `limit`, `has_more`
+  - `GET /api/v1/interview/history` now returns `PaginatedResponse[InterviewSessionInDB]` with `skip`/`limit` query params
+  - `GET /api/v1/resume/` now returns `PaginatedResponse[ResumeResponse]` with `skip`/`limit` query params (management router enabled)
+  - `UserRole` enum added to `app/domain/value_objects/enums.py` — `user`, `admin`, `moderator`
+  - `role` column added to `users` table (default: `user`) + Alembic migration `a1b2c3d4e5f6`
+  - `require_role()` dependency factory in `app/api/deps.py` — role-gated endpoint access
+  - `UserInDB` schema extended with `role` field
 - **Redis + Rate Limiting + Token Pruning** (Phase 7):
   - `redis>=5.0.0` and `slowapi>=0.1.9` added to requirements
   - `app/infrastructure/cache/redis_client.py` — async Redis client singleton with `RedisTokenBlacklist` and `RedisRateLimit` helpers
