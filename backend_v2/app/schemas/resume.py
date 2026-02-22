@@ -4,17 +4,8 @@ from datetime import datetime
 from enum import Enum
 import re
 
-class ResumeStatus(str, Enum):
-    PENDING = "pending"
-    ANALYZED = "analyzed"
-    ERROR = "error"
-    PROCESSING = "processing"
-
-class FileType(str, Enum):
-    PDF = "application/pdf"
-    DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    DOC = "application/msword"
-    TXT = "text/plain"
+# Import enums from domain layer — single source of truth
+from app.domain.value_objects.enums import ResumeStatus, FileType
 
 class Experience(BaseModel):
     company: str = Field(..., min_length=1, max_length=100)

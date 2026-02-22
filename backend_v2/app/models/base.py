@@ -1,8 +1,9 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, func
+"""
+Backward-compatible re-export.
 
-Base = declarative_base()
- 
-class TimestampMixin:
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False) 
+Canonical location: app.infrastructure.persistence.models.base
+"""
+
+from app.infrastructure.persistence.models.base import Base, TimestampMixin  # noqa: F401
+
+__all__ = ["Base", "TimestampMixin"]

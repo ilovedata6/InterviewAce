@@ -19,6 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Alembic migration system (`backend_v2/alembic/`) with initial schema migration
 - `alembic.ini` configured to read DATABASE_URL from app settings
 - `alembic/env.py` imports all ORM models for autogenerate support
+- **Clean Architecture scaffold** — three new layers:
+  - `domain/entities/` — pure Python business objects (`UserEntity`, `ResumeEntity`, `InterviewSessionEntity`, `InterviewQuestionEntity`)
+  - `domain/interfaces/` — abstract contracts (`IUserRepository`, `IResumeRepository`, `IInterviewRepository`, `ILLMProvider`, `IFileStorage`, `IEmailService`)
+  - `domain/value_objects/enums.py` — `ResumeStatus` and `FileType` as single source of truth
+  - `domain/exceptions.py` — domain exception hierarchy (12 exception classes)
+  - `application/use_cases/` — placeholder for auth, resume, interview use cases
+  - `application/dto/` — placeholder for data transfer objects
+  - `infrastructure/persistence/models/` — canonical ORM model location
+  - `infrastructure/persistence/repositories/` — `UserRepository`, `ResumeRepository`, `InterviewRepository` implementing domain ABCs
+  - `infrastructure/llm/`, `infrastructure/storage/`, `infrastructure/email/` — adapter placeholders
+- `app/core/exceptions.py` — exception-to-HTTP handler mapping (domain exceptions → JSON responses)
+- `backend_v2/Docs/ARCHITECTURE.md` — Clean Architecture documentation
 
 ### Changed
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
@@ -32,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init_db.py` — removed `Base.metadata.create_all()` and `drop_db()`; schema now managed by Alembic
 - `middleware.py` — rate limiter reads from `settings.RATE_LIMIT` instead of hardcoded values
 - `requirements.txt` — added `alembic>=1.14.0`
+- **ORM models relocated** from `app/models/` to `app/infrastructure/persistence/models/` (old paths become re-export wrappers)
+- **Enums relocated** — `ResumeStatus`, `FileType` moved from `app/schemas/resume.py` to `app/domain/value_objects/enums.py`; schemas now import from domain
+- `alembic/env.py` — updated to import models from `app.infrastructure.persistence.models`
+- `main.py` — registers domain exception handlers via `register_exception_handlers()`
 
 ### Security
 - Removed wildcard CORS (`allow_origins=["*"]`) from `main.py`

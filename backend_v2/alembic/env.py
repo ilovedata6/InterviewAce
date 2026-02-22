@@ -17,10 +17,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # ── Import app settings and all models ────────────────────────────────────
 from app.core.config import settings  # noqa: E402
-from app.models.base import Base  # noqa: E402
+from app.infrastructure.persistence.models.base import Base  # noqa: E402
 
 # Import every model module so Base.metadata knows about all tables
-from app.models import user, resume, interview, security  # noqa: E402, F401
+from app.infrastructure.persistence.models import (  # noqa: E402, F401
+    user, resume, interview, security,
+)
 
 # ── Alembic Config object ────────────────────────────────────────────────
 config = context.config
