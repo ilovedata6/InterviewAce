@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `infrastructure/llm/`, `infrastructure/storage/`, `infrastructure/email/` — adapter placeholders
 - `app/core/exceptions.py` — exception-to-HTTP handler mapping (domain exceptions → JSON responses)
 - `backend_v2/Docs/ARCHITECTURE.md` — Clean Architecture documentation
+- **LLM Provider Infrastructure** (Phase 3):
+  - `infrastructure/llm/openai_provider.py` — `OpenAIProvider(ILLMProvider)` using OpenAI SDK with JSON mode, model `gpt-5.2-2025-12-11`
+  - `infrastructure/llm/gemini_provider.py` — `GeminiProvider(ILLMProvider)` refactored from legacy code with markdown fence cleaning
+  - `infrastructure/llm/factory.py` — `LLMProviderWithFallback` composite + `get_llm_provider()` factory
+  - `services/ai_analyzer.py` — background resume re-analysis service using LLM provider chain
 
 ### Changed
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
@@ -48,6 +53,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enums relocated** — `ResumeStatus`, `FileType` moved from `app/schemas/resume.py` to `app/domain/value_objects/enums.py`; schemas now import from domain
 - `alembic/env.py` — updated to import models from `app.infrastructure.persistence.models`
 - `main.py` — registers domain exception handlers via `register_exception_handlers()`
+- **LLM migration** (Phase 3):
+  - Primary LLM switched from Gemini to OpenAI GPT-5.2 (`gpt-5.2-2025-12-11`)
+  - Gemini retained as automatic fallback via `LLMProviderWithFallback` composite
+  - `config.py` — added `LLM_PRIMARY_PROVIDER`, `LLM_TIMEOUT`, `LLM_MAX_RETRIES` settings
+  - `services/resume_parser.py` — removed module-level Gemini client and HF NER pipeline; now accepts `ILLMProvider` via DI
+  - `services/interview_orchestrator.py` — `InterviewOrchestrator` accepts `ILLMProvider` via constructor; removed `os.getenv("GEMINI_API_KEY")`
+  - `services/interview_orchestrator.py` — `complete_interview_session()` uses `get_llm_provider()` instead of ad-hoc `LLMClient`
+  - `utils/llm_client.py` — replaced with backward-compat deprecation shim delegating to `get_llm_provider()`
+  - System/user prompts updated to include "respond with valid JSON only" for OpenAI JSON mode compatibility
+  - `requirements.txt` — added `openai>=1.60.0`, `google-genai>=1.0.0`
+
+### Removed
+- `torch==2.2.0`, `transformers==4.37.2`, `spacy==3.7.2` and 20+ transitive deps (~2 GB) removed from `requirements.txt`
+- Module-level `hf_ner = pipeline("ner", ...)` in `resume_parser.py` (no longer downloads 1.3 GB model on import)
+- `_parse_with_gemini()`, `_fallback_parse()`, `clean_gemini_json()` functions from `resume_parser.py`
+- Direct Gemini SDK usage from `llm_client.py` and `interview_orchestrator.py`
 
 ### Security
 - Removed wildcard CORS (`allow_origins=["*"]`) from `main.py`

@@ -112,6 +112,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.0-flash"
 
+    # ── LLM — Provider chain ──────────────────────────────────────────────
+    LLM_PRIMARY_PROVIDER: str = "openai"  # "openai" | "gemini"
+    LLM_TIMEOUT: int = 60  # seconds per LLM call
+    LLM_MAX_RETRIES: int = 2
+
     # ── Legacy alias (used by existing services until migration) ──────────
     @property
     def LLM_API_KEY(self) -> Optional[str]:

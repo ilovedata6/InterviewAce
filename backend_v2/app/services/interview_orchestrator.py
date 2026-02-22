@@ -6,25 +6,19 @@ from app.models.interview import InterviewSession, InterviewQuestion
 from app.schemas.interview import InterviewQuestionCreate, SummaryOut, QuestionFeedback
 from app.db.session import get_db
 from app.core.config import settings
-from app.utils.llm_client import LLMClient
-from app.models.resume import Resume  # Assuming Resume model is in app.models.resume
+from app.domain.interfaces.llm_provider import ILLMProvider
+from app.infrastructure.llm.factory import get_llm_provider
+from app.models.resume import Resume
 from app.models.user import User
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
 
-import os 
-from dotenv import load_dotenv
-load_dotenv()
-
 logger = logging.getLogger(__name__)
 
 class InterviewOrchestrator:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, llm_provider: ILLMProvider | None = None):
         self.db = db
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
-        self.llm_client = LLMClient(api_key=api_key)
+        self.llm_provider = llm_provider or get_llm_provider()
 
     def fetch_resume_context(self, resume_id: UUID) -> dict:
         resume = self.db.query(Resume).filter(Resume.id == resume_id).first()
@@ -51,7 +45,7 @@ class InterviewOrchestrator:
         try:
             logger.info(f"Generating questions for session {session.id} with context: {resume_context}")
             prompt = self._build_prompt(resume_context)
-            questions = self.llm_client.generate_questions(prompt)
+            questions = self.llm_provider.generate_questions(prompt)
             logger.info(f"LLM response for session {session.id}: {questions}")
             return self._map_questions_to_schema(cast(UUID, session.id), questions)
         except Exception as e:
@@ -73,7 +67,8 @@ class InterviewOrchestrator:
         system_prompt = (
                 "You are an expert technical interviewer. "
                 "Your job is to generate a list of high-quality, on-point interview questions "
-                "that test a candidate’s skills, Professional experience, and past projects."
+                "that test a candidate's skills, professional experience, and past projects. "
+                "Always respond with valid JSON only."
 )
         
         user_prompt = (
@@ -157,18 +152,24 @@ def complete_interview_session(db: Session, session: InterviewSession):
         for q in questions
     ]
     prompt = {
-        "system_prompt": "You are an expert technical interviewer. Evaluate the following interview session. For each question, provide a score (0-1) and a brief feedback. Then, summarize the candidate's strengths and weaknesses and provide an overall confidence score (0-1). Return JSON as specified.",
-        "user_prompt": f"Session Q&A: {qa_pairs}\nOUTPUT FORMAT: {{'summary': str, 'confidence_score': float, 'questions_feedback': [{{'question_id': str, 'evaluation_score': float, 'feedback_comment': str}}]}}"
+        "system_prompt": (
+            "You are an expert technical interviewer. Evaluate the following interview session. "
+            "For each question, provide a score (0-1) and brief feedback. Then, summarize the "
+            "candidate's strengths and weaknesses and provide an overall confidence score (0-1). "
+            "Always respond with valid JSON only."
+        ),
+        "user_prompt": (
+            f"Session Q&A: {qa_pairs}\n"
+            "OUTPUT FORMAT (JSON): "
+            '{"summary": "<string>", "confidence_score": <float>, '
+            '"questions_feedback": [{"question_id": "<string>", "evaluation_score": <float>, '
+            '"feedback_comment": "<string>"}]}'
+        ),
     }
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set.")
-    llm_client = LLMClient(api_key)
-    if not llm_client:
-        raise HTTPException(status_code=500, detail="LLM client initialization failed.")
+    llm_provider = get_llm_provider()
     try:
-        llm_response = llm_client.generate_feedback(prompt)
+        llm_response = llm_provider.generate_feedback(prompt)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM evaluation failed: {e}")
 
