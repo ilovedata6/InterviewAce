@@ -71,3 +71,7 @@ celery[redis]>=5.4.0
 
 # ── Error Monitoring (Phase 9) ───────────────────────────────────────────
 sentry-sdk[fastapi]>=2.0.0
+
+# ── CI/CD & Code Quality (Phase 12) ──────────────────────────────────────
+pre-commit>=4.0.0
+ruff>=0.9.0

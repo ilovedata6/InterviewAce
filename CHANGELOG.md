@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `role` column added to `users` table (default: `user`) + Alembic migration `a1b2c3d4e5f6`
   - `require_role()` dependency factory in `app/api/deps.py` — role-gated endpoint access
   - `UserInDB` schema extended with `role` field
+- **CI/CD Pipeline** (Phase 12):
+  - `.github/workflows/ci.yml` — GitHub Actions pipeline: lint (Ruff) → test (pytest) → coverage enforcement
+  - Lint job runs `ruff check` and `ruff format --check` against `backend_v2/`
+  - Test job runs with Redis service container; enforces ≥80% coverage via `coverage report --fail-under=80`
+  - Coverage XML uploaded as artifact for 14-day retention
+  - `.pre-commit-config.yaml` — Ruff lint+format, trailing whitespace, YAML/TOML checks, large file guard, secret detection (detect-secrets)
+  - `pre-commit>=4.0.0` and `ruff>=0.9.0` added to requirements
 - **Redis + Rate Limiting + Token Pruning** (Phase 7):
   - `redis>=5.0.0` and `slowapi>=0.1.9` added to requirements
   - `app/infrastructure/cache/redis_client.py` — async Redis client singleton with `RedisTokenBlacklist` and `RedisRateLimit` helpers
