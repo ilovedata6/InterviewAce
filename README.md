@@ -68,7 +68,7 @@ An AI-powered backend that helps users prepare for job interviews by analysing t
 
 4. Configure environment variables — copy the example and fill in values:
    ```bash
-   cp backend_v2/.env.example backend_v2/.env
+   cp backend/.env.example backend/.env
    ```
 
    Key variables:
@@ -85,7 +85,7 @@ An AI-powered backend that helps users prepare for job interviews by analysing t
 
 5. Run database migrations:
    ```bash
-   cd backend_v2
+   cd backend
    alembic upgrade head
    ```
 
@@ -123,7 +123,7 @@ InterviewAce/
 │   ├── DATABASE_SCHEMA.md
 │   ├── Planner.md
 │   └── ...
-├── backend_v2/                        # Active backend
+├── backend/                        # Active backend
 │   ├── main.py
 │   ├── alembic/
 │   ├── app/
@@ -152,7 +152,7 @@ InterviewAce/
 ## Running Tests
 
 ```bash
-cd backend_v2
+cd backend
 python -m pytest tests/ -v --tb=short
 ```
 

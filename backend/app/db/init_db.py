@@ -24,7 +24,7 @@ def init_db() -> None:
     """
     logger.info(
         "Database schema is managed by Alembic. "
-        "Run 'alembic upgrade head' from backend_v2/ to apply migrations."
+        "Run 'alembic upgrade head' from backend/ to apply migrations."
     )
 
 

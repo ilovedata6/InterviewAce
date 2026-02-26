@@ -12,7 +12,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# ── Ensure backend_v2/ is on sys.path so `app.*` imports work ─────────────
+# ── Ensure backend/ is on sys.path so `app.*` imports work ─────────────
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # ── Import app settings and all models ────────────────────────────────────

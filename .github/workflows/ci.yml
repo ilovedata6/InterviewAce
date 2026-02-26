@@ -73,7 +73,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest backend_v2/tests/ -v --tb=short
+          coverage run -m pytest backend/tests/ -v --tb=short
           coverage report --fail-under=80
           coverage xml -o coverage.xml
 

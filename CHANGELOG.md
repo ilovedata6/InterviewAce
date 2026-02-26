@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `UserInDB` schema extended with `role` field
 - **CI/CD Pipeline** (Phase 12):
   - `.github/workflows/ci.yml` — GitHub Actions pipeline: lint (Ruff) → test (pytest) → coverage enforcement
-  - Lint job runs `ruff check` and `ruff format --check` against `backend_v2/`
+  - Lint job runs `ruff check` and `ruff format --check` against `backend/`
   - Test job runs with Redis service container; enforces ≥80% coverage via `coverage report --fail-under=80`
   - Coverage XML uploaded as artifact for 14-day retention
   - `.pre-commit-config.yaml` — Ruff lint+format, trailing whitespace, YAML/TOML checks, large file guard, secret detection (detect-secrets)
@@ -75,8 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `app/api/health.py` — health router mounted at root (no `/api/v1` prefix)
 - **Testing Foundation** (Phase 6):
   - Test dependencies added: `pytest>=8.0.0`, `pytest-asyncio>=0.24.0`, `httpx>=0.27.0`, `factory-boy>=3.3.0`, `coverage>=7.0.0`, `aiosqlite>=0.20.0`
-  - `backend_v2/tests/conftest.py` — shared fixtures: in-memory async SQLite, HTTPX `AsyncClient`, `test_user`, `auth_token`, `MockLLMProvider`
-  - `pyproject.toml` — `testpaths` updated to `backend_v2/tests`
+  - `backend/tests/conftest.py` — shared fixtures: in-memory async SQLite, HTTPX `AsyncClient`, `test_user`, `auth_token`, `MockLLMProvider`
+  - `pyproject.toml` — `testpaths` updated to `backend/tests`
   - Unit tests: `test_security.py` (password complexity, hashing, JWT, CSRF, email verification tokens)
   - Unit tests: `test_llm_factory.py` (fallback chain: primary success, primary fail → fallback, both fail, factory function)
   - Integration tests: `test_auth.py` (register, login, /me, refresh, logout, duplicate registration, invalid credentials)
@@ -85,8 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration tests: `test_health.py` (liveness and readiness probes)
 - `.env.example` — all required environment variables with placeholder values
 - `pyproject.toml` — unified config for ruff, mypy, pytest, coverage
-- `backend_v2/` — new backend folder for upgraded implementation
-- Alembic migration system (`backend_v2/alembic/`) with initial schema migration
+- `backend/` — new backend folder for upgraded implementation
+- Alembic migration system (`backend/alembic/`) with initial schema migration
 - `alembic.ini` configured to read DATABASE_URL from app settings
 - `alembic/env.py` imports all ORM models for autogenerate support
 - **Clean Architecture scaffold** — three new layers:
@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `infrastructure/persistence/repositories/` — `UserRepository`, `ResumeRepository`, `InterviewRepository` implementing domain ABCs
   - `infrastructure/llm/`, `infrastructure/storage/`, `infrastructure/email/` — adapter placeholders
 - `app/core/exceptions.py` — exception-to-HTTP handler mapping (domain exceptions → JSON responses)
-- `backend_v2/Docs/ARCHITECTURE.md` — Clean Architecture documentation
+- `backend/Docs/ARCHITECTURE.md` — Clean Architecture documentation
 - **LLM Provider Infrastructure** (Phase 3):
   - `infrastructure/llm/openai_provider.py` — `OpenAIProvider(ILLMProvider)` using OpenAI SDK with JSON mode, model `gpt-5.2-2025-12-11`
   - `infrastructure/llm/gemini_provider.py` — `GeminiProvider(ILLMProvider)` refactored from legacy code with markdown fence cleaning
@@ -114,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `Docs/ARCHITECTURE.md` rewritten for v2 (async stack, Redis, Celery, Sentry, LLM fallback, RBAC)
-- `backend_v2/Docs/ARCHITECTURE.md` updated: removed stale `application/`, `domain/services/`, `infrastructure/storage/`, `infrastructure/email/` references; added `cache/` and `tasks/` directories
+- `backend/Docs/ARCHITECTURE.md` updated: removed stale `application/`, `domain/services/`, `infrastructure/storage/`, `infrastructure/email/` references; added `cache/` and `tasks/` directories
 - `README.md` updated with v2 tech stack, setup instructions (Redis, Celery, Alembic), and project structure
 - Renamed `backend/` → `backend_v1/` (preserved as reference)
 - `config.py` — SECRET_KEY now required with strong validation (min 32 chars, no insecure defaults)
