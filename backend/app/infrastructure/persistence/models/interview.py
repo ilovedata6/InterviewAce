@@ -13,8 +13,8 @@ class InterviewSession(Base, TimestampMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     resume_id = Column(UUID(as_uuid=True), ForeignKey("resumes.id"), nullable=False)
-    started_at = Column(DateTime, nullable=False)
-    completed_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
     final_score = Column(Float, nullable=True)
     feedback_summary = Column(Text, nullable=True)
 

@@ -27,6 +27,9 @@ limiter = Limiter(
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    # Paths that serve Swagger/ReDoc UI — these need inline scripts & CDN assets
+    _DOCS_PATHS = frozenset({"/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json"})
+
     def __init__(self, app: ASGIApp):
         super().__init__(app)
         self.security_headers = {
@@ -38,11 +41,23 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
         }
+        # Relaxed CSP for the Swagger / ReDoc UI pages
+        self._docs_csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "worker-src 'self' blob:;"
+        )
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
+        is_docs = request.url.path in self._DOCS_PATHS
         for header, value in self.security_headers.items():
-            response.headers[header] = value
+            if is_docs and header == "Content-Security-Policy":
+                response.headers[header] = self._docs_csp
+            else:
+                response.headers[header] = value
         return response
 
 

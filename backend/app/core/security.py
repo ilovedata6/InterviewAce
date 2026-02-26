@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 import re
 import uuid
 from fastapi import HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
@@ -36,8 +36,8 @@ pwd_context = CryptContext(
     bcrypt__max_rounds=15
 )
 
-# OAuth2 scheme for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+# Bearer token scheme for Swagger "Authorize" button
+bearer_scheme = HTTPBearer()
 
 class SecurityException(HTTPException):
     """Custom security exception with proper HTTP status codes"""
@@ -404,9 +404,10 @@ def verify_csrf_token(token: str, csrf_token: str) -> bool:
     return token == csrf_token
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
+    token = credentials.credentials
     """Get current user from token"""
     try:
         payload = await verify_token(token, db)

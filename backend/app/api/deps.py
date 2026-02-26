@@ -8,7 +8,7 @@ Provides:
 """
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -65,8 +65,8 @@ from app.application.use_cases.resume import (
     UploadResumeUseCase,
 )
 
-# ── OAuth2 scheme ───────────────────────────────────────────────────────────
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+# ── Bearer token scheme ─────────────────────────────────────────────────────
+bearer_scheme = HTTPBearer()
 
 
 # =====================================================================
@@ -75,8 +75,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> User:
+    token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
