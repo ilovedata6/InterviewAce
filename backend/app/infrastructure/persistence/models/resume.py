@@ -4,7 +4,7 @@ Note: Enums are imported from ``app.domain.value_objects.enums`` — the single
 source of truth — fixing the previous model→schema layer violation.
 """
 
-from sqlalchemy import Column, String, UUID, JSON, ForeignKey, Integer, Boolean, Float, Text, Enum as SQLEnum
+from sqlalchemy import Column, String, UUID, JSON, ForeignKey, Integer, Boolean, Float, Text, Enum as SQLEnum, Index
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -16,7 +16,7 @@ class Resume(Base, TimestampMixin):
     __tablename__ = "resumes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     file_path = Column(String, nullable=False)
@@ -24,7 +24,7 @@ class Resume(Base, TimestampMixin):
     file_size = Column(Integer, nullable=False)
     file_type = Column(SQLEnum(FileType), nullable=False)
     inferred_role = Column(String(100), nullable=True)
-    status = Column(SQLEnum(ResumeStatus), nullable=False, default=ResumeStatus.PENDING)
+    status = Column(SQLEnum(ResumeStatus), nullable=False, default=ResumeStatus.PENDING, index=True)
     analysis = Column(JSON, nullable=True)
     version = Column(Integer, nullable=False, default=1)
     years_of_experience = Column(Integer, nullable=True)

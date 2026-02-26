@@ -24,6 +24,9 @@ async def answer_question(
 ):
     """Submit an answer to a specific interview question.
 
+    Optionally includes ``time_taken_seconds`` — how long the user spent
+    answering this question (tracked for analytics).
+
     Returns the next unanswered question or 204 No Content when all
     questions have been answered.
 
@@ -37,10 +40,17 @@ async def answer_question(
                 question_id=question_id,
                 user_id=current_user.id,
                 answer_text=answer_in.answer_text,
+                time_taken_seconds=answer_in.time_taken_seconds,
             )
         )
     except EntityNotFoundError:
         raise HTTPException(status_code=404, detail="Session not found or not owned by user")
     if not result:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    return QuestionOut(question_id=result.question_id, question_text=result.question_text)
+    return QuestionOut(
+        question_id=result.question_id,
+        question_text=result.question_text,
+        category=result.category,
+        difficulty=result.difficulty,
+        order_index=result.order_index,
+    )

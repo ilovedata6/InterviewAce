@@ -41,10 +41,13 @@ async def health() -> dict:
 async def ready() -> dict:
     """Readiness probe — returns 200 only when the application can serve
     traffic (database + Redis reachable). Returns 503 otherwise.
+
+    Also provides informational checks for Celery and LLM provider
+    (these are non-blocking — degraded but still "ready").
     """
     checks: dict = {}
 
-    # Database connectivity
+    # ── Database connectivity (critical) ────────────────────────────────
     try:
         async with async_engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -53,7 +56,7 @@ async def ready() -> dict:
         logger.error("readiness_db_check_failed", error=str(exc))
         checks["database"] = "unavailable"
 
-    # Redis connectivity
+    # ── Redis connectivity (critical) ───────────────────────────────────
     try:
         r = await get_redis()
         await r.ping()
@@ -62,7 +65,32 @@ async def ready() -> dict:
         logger.error("readiness_redis_check_failed", error=str(exc))
         checks["redis"] = "unavailable"
 
-    overall = "ready" if all(v == "ok" for v in checks.values()) else "not_ready"
+    # ── Celery / broker connectivity (informational) ────────────────────
+    try:
+        from app.core.config import settings
+        import redis as sync_redis
+
+        r_sync = sync_redis.from_url(settings.REDIS_URL, socket_connect_timeout=2)
+        r_sync.ping()
+        checks["celery_broker"] = "ok"
+        r_sync.close()
+    except Exception as exc:
+        logger.warning("readiness_celery_check_failed", error=str(exc))
+        checks["celery_broker"] = "unavailable"
+
+    # ── LLM provider availability (informational) ──────────────────────
+    try:
+        from app.infrastructure.llm.factory import get_llm_provider
+
+        provider = get_llm_provider()
+        checks["llm_provider"] = "ok"
+    except Exception as exc:
+        logger.warning("readiness_llm_check_failed", error=str(exc))
+        checks["llm_provider"] = "unavailable"
+
+    # Critical checks: database + redis
+    critical_ok = checks.get("database") == "ok" and checks.get("redis") == "ok"
+    overall = "ready" if critical_ok else "not_ready"
 
     if overall != "ready":
         from fastapi.responses import JSONResponse

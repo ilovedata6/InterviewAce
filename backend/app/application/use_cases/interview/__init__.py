@@ -16,6 +16,7 @@ import structlog
 from app.application.dto.interview import (
     InterviewSummaryResult,
     QuestionResult,
+    StartInterviewInput,
     SubmitAnswerInput,
 )
 from app.domain.entities.interview import (
@@ -66,23 +67,36 @@ class StartInterviewUseCase:
         self._resume_repo = resume_repo
         self._llm_provider = llm_provider
 
-    async def execute(self, user_id: uuid.UUID) -> InterviewSessionEntity:
-        # 1. Get latest resume
-        resume = await self._resume_repo.get_latest_by_user_id(user_id)
+    async def execute(self, dto: StartInterviewInput) -> InterviewSessionEntity:
+        # 1. Get specified resume or latest
+        if dto.resume_id:
+            resume = await self._resume_repo.get_by_id(dto.resume_id)
+            if not resume or resume.user_id != dto.user_id:
+                raise EntityNotFoundError("Resume", str(dto.resume_id))
+        else:
+            resume = await self._resume_repo.get_latest_by_user_id(dto.user_id)
         if not resume:
             raise EntityNotFoundError("Resume")
 
-        # 2. Create session entity
+        # 2. Create session entity with config
         session_entity = InterviewSessionEntity(
-            user_id=user_id,
+            user_id=dto.user_id,
             resume_id=resume.id,
             started_at=datetime.now(timezone.utc),
+            difficulty=dto.difficulty,
+            question_count=dto.question_count,
+            focus_areas=dto.focus_areas,
         )
         saved_session = await self._interview_repo.create_session(session_entity)
 
         # 3. Build resume context & generate questions via LLM
         resume_context = self._build_resume_context(resume)
-        prompt = self._build_prompt(resume_context)
+        prompt = self._build_prompt(
+            resume_context,
+            question_count=dto.question_count,
+            difficulty=dto.difficulty,
+            focus_areas=dto.focus_areas,
+        )
         try:
             raw_questions = self._llm_provider.generate_questions(prompt)
             logger.info(
@@ -94,11 +108,24 @@ class StartInterviewUseCase:
             logger.error("llm_call_failed", session_id=str(saved_session.id), error=str(e))
             raise InterviewError("Failed to generate questions")
 
-        # 4. Persist questions
-        for q_text in raw_questions:
+        # 4. Persist questions with metadata
+        for idx, q_data in enumerate(raw_questions):
+            # Support both plain string and dict from LLM
+            if isinstance(q_data, dict):
+                q_text = q_data.get("question", str(q_data))
+                q_category = q_data.get("type", "general")
+                q_difficulty = q_data.get("difficulty", dto.difficulty if dto.difficulty != "mixed" else "medium")
+            else:
+                q_text = str(q_data)
+                q_category = "general"
+                q_difficulty = dto.difficulty if dto.difficulty != "mixed" else "medium"
+
             q_entity = InterviewQuestionEntity(
                 session_id=saved_session.id,
                 question_text=q_text,
+                category=q_category,
+                difficulty=q_difficulty,
+                order_index=idx,
             )
             await self._interview_repo.add_question(q_entity)
 
@@ -122,7 +149,13 @@ class StartInterviewUseCase:
         }
 
     @staticmethod
-    def _build_prompt(ctx: dict) -> dict:
+    def _build_prompt(
+        ctx: dict,
+        *,
+        question_count: int = 12,
+        difficulty: str = "mixed",
+        focus_areas: Optional[List[str]] = None,
+    ) -> dict:
         skills = ctx.get("skills") or []
         if not isinstance(skills, list):
             skills = []
@@ -130,6 +163,17 @@ class StartInterviewUseCase:
         project_details = "\n".join(
             f"Projects: {p['description']}" for p in projects
         )
+
+        difficulty_instruction = ""
+        if difficulty != "mixed":
+            difficulty_instruction = f"All questions should be at **{difficulty}** difficulty level.\n"
+
+        focus_instruction = ""
+        if focus_areas:
+            focus_instruction = (
+                f"Focus the questions on these areas: {', '.join(focus_areas)}.\n"
+            )
+
         system_prompt = (
             "You are an expert technical interviewer. "
             "Your job is to generate a list of high-quality, on-point interview questions "
@@ -142,11 +186,13 @@ class StartInterviewUseCase:
             f"- Years of Experience: {ctx.get('years_of_experience')}\n"
             f"- Skills: {', '.join(skills)}\n"
             f"- Projects:\n{project_details}\n\n"
+            f"{difficulty_instruction}"
+            f"{focus_instruction}"
             "OUTPUT FORMAT:\n"
             "- Return a JSON array of objects, each with:\n"
-            '    { "type": "technical|behavioral|project", "question": string }\n'
-            "- Total questions: 12–15\n"
-            "- Counts: 5 technical, 3 behavioral, 5–4 project\n"
+            '    { "type": "technical|behavioral|project|system_design|coding", '
+            '"question": string, "difficulty": "easy|medium|hard" }\n'
+            f"- Total questions: {question_count}\n"
             "- No additional text, no markdown, no code fences.\n\n"
             "Now generate the questions."
         )
@@ -175,13 +221,21 @@ class SubmitAnswerUseCase:
 
         # Record answer
         question.answer_text = dto.answer_text
+        if dto.time_taken_seconds is not None:
+            question.time_taken_seconds = dto.time_taken_seconds
         await self._interview_repo.update_question(question)
 
         # Return next unanswered
         next_q = await self._interview_repo.get_next_unanswered_question(dto.session_id)
         if not next_q:
             return None
-        return QuestionResult(question_id=next_q.id, question_text=next_q.question_text)
+        return QuestionResult(
+            question_id=next_q.id,
+            question_text=next_q.question_text,
+            category=next_q.category,
+            difficulty=next_q.difficulty,
+            order_index=next_q.order_index,
+        )
 
 
 # ── Get Next Question ───────────────────────────────────────────────────────
@@ -200,7 +254,13 @@ class GetNextQuestionUseCase:
         next_q = await self._interview_repo.get_next_unanswered_question(session_id)
         if not next_q:
             return None
-        return QuestionResult(question_id=next_q.id, question_text=next_q.question_text)
+        return QuestionResult(
+            question_id=next_q.id,
+            question_text=next_q.question_text,
+            category=next_q.category,
+            difficulty=next_q.difficulty,
+            order_index=next_q.order_index,
+        )
 
 
 # ── Complete Interview ──────────────────────────────────────────────────────
@@ -239,6 +299,7 @@ class CompleteInterviewUseCase:
                 "question_id": str(q.id),
                 "question": q.question_text,
                 "answer": q.answer_text,
+                "category": q.category,
             }
             for q in questions
         ]
@@ -253,6 +314,10 @@ class CompleteInterviewUseCase:
                 f"Session Q&A: {qa_pairs}\n"
                 "OUTPUT FORMAT (JSON): "
                 '{"summary": "<string>", "confidence_score": <float>, '
+                '"strengths": ["<string>", ...], '
+                '"weaknesses": ["<string>", ...], '
+                '"score_breakdown": {"technical": <float>, "behavioral": <float>, '
+                '"project": <float>, "overall": <float>}, '
                 '"questions_feedback": [{"question_id": "<string>", "evaluation_score": <float>, '
                 '"feedback_comment": "<string>"}]}'
             ),
@@ -266,12 +331,15 @@ class CompleteInterviewUseCase:
         summary = llm_response.get("summary")
         confidence_score = llm_response.get("confidence_score")
         questions_feedback = llm_response.get("questions_feedback", [])
+        strengths = llm_response.get("strengths")
+        weaknesses = llm_response.get("weaknesses")
+        score_breakdown = llm_response.get("score_breakdown")
 
         if summary is None or confidence_score is None or not questions_feedback:
             raise InterviewError("LLM response missing required fields.")
 
         # Update session
-        session.complete(score=confidence_score, summary=summary)
+        session.complete(score=confidence_score, summary=summary, score_breakdown=score_breakdown)
         await self._interview_repo.update_session(session)
 
         # Update question feedback
@@ -288,6 +356,9 @@ class CompleteInterviewUseCase:
             final_score=confidence_score,
             feedback_summary=summary,
             question_feedback=questions_feedback,
+            score_breakdown=score_breakdown,
+            strengths=strengths,
+            weaknesses=weaknesses,
         )
 
 

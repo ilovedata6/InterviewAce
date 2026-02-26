@@ -32,3 +32,23 @@ class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
     MODERATOR = "moderator"
+
+
+class InterviewDifficulty(str, Enum):
+    """Difficulty level for interview questions."""
+
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+    MIXED = "mixed"
+
+
+class QuestionCategory(str, Enum):
+    """Category / type of interview question."""
+
+    TECHNICAL = "technical"
+    BEHAVIORAL = "behavioral"
+    PROJECT = "project"
+    SYSTEM_DESIGN = "system_design"
+    CODING = "coding"
+    GENERAL = "general"

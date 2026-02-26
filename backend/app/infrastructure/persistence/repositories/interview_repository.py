@@ -51,6 +51,10 @@ class InterviewRepository(IInterviewRepository):
             completed_at=model.completed_at,
             final_score=model.final_score,
             feedback_summary=model.feedback_summary,
+            difficulty=getattr(model, "difficulty", "mixed") or "mixed",
+            question_count=getattr(model, "question_count", 12) or 12,
+            focus_areas=getattr(model, "focus_areas", None),
+            score_breakdown=getattr(model, "score_breakdown", None),
             questions=questions,
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -66,6 +70,10 @@ class InterviewRepository(IInterviewRepository):
             completed_at=entity.completed_at,
             final_score=entity.final_score,
             feedback_summary=entity.feedback_summary,
+            difficulty=entity.difficulty,
+            question_count=entity.question_count,
+            focus_areas=entity.focus_areas,
+            score_breakdown=entity.score_breakdown,
         )
 
     # ------------------------------------------------------------------
@@ -81,6 +89,10 @@ class InterviewRepository(IInterviewRepository):
             answer_text=model.answer_text,
             evaluation_score=model.evaluation_score,
             feedback_comment=model.feedback_comment,
+            category=getattr(model, "category", "general") or "general",
+            difficulty=getattr(model, "difficulty", "medium") or "medium",
+            time_taken_seconds=getattr(model, "time_taken_seconds", None),
+            order_index=getattr(model, "order_index", 0) or 0,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -94,6 +106,10 @@ class InterviewRepository(IInterviewRepository):
             answer_text=entity.answer_text,
             evaluation_score=entity.evaluation_score,
             feedback_comment=entity.feedback_comment,
+            category=entity.category,
+            difficulty=entity.difficulty,
+            time_taken_seconds=entity.time_taken_seconds,
+            order_index=entity.order_index,
         )
 
     # ------------------------------------------------------------------
@@ -143,6 +159,7 @@ class InterviewRepository(IInterviewRepository):
         model.completed_at = entity.completed_at
         model.final_score = entity.final_score
         model.feedback_summary = entity.feedback_summary
+        model.score_breakdown = entity.score_breakdown
         await self._db.commit()
         await self._db.refresh(model)
         return self._session_to_entity(model)
@@ -168,6 +185,7 @@ class InterviewRepository(IInterviewRepository):
         model.answer_text = entity.answer_text
         model.evaluation_score = entity.evaluation_score
         model.feedback_comment = entity.feedback_comment
+        model.time_taken_seconds = entity.time_taken_seconds
         await self._db.commit()
         await self._db.refresh(model)
         return self._question_to_entity(model)

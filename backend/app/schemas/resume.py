@@ -112,11 +112,11 @@ class ResumeUploadResponse(BaseModel):
 
 class ResumeAnalysisResponse(BaseModel):
     resume_id: str
-    analysis: ResumeAnalysis
+    analysis: Optional[Dict[str, Any]] = None
     status: ResumeStatus
     created_at: datetime
-    processing_time: float
-    confidence_score: float
+    processing_time: Optional[float] = None
+    confidence_score: Optional[float] = None
 
 class ResumeShareRequest(BaseModel):
     is_public: bool = False

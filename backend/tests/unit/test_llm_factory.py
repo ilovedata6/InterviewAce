@@ -136,5 +136,5 @@ class TestGetLLMProvider:
             mock_settings.LLM_PRIMARY_PROVIDER = "unknown"
             mock_settings.OPENAI_API_KEY = "key"
             mock_settings.GEMINI_API_KEY = "key"
-            with pytest.raises(ValueError, match="Unknown LLM_PRIMARY_PROVIDER"):
+            with pytest.raises(LLMProviderError, match="Unknown LLM_PRIMARY_PROVIDER"):
                 get_llm_provider()

@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -18,6 +18,10 @@ class InterviewQuestionEntity:
     answer_text: Optional[str] = None
     evaluation_score: Optional[float] = None
     feedback_comment: Optional[str] = None
+    category: str = "general"
+    difficulty: str = "medium"
+    time_taken_seconds: Optional[int] = None
+    order_index: int = 0
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -39,6 +43,10 @@ class InterviewSessionEntity:
     completed_at: Optional[datetime] = None
     final_score: Optional[float] = None
     feedback_summary: Optional[str] = None
+    difficulty: str = "mixed"
+    question_count: int = 12
+    focus_areas: Optional[List[str]] = None
+    score_breakdown: Optional[Dict[str, Any]] = None
     questions: List[InterviewQuestionEntity] = field(default_factory=list)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -46,10 +54,13 @@ class InterviewSessionEntity:
     def is_completed(self) -> bool:
         return self.completed_at is not None
 
-    def complete(self, score: float, summary: str) -> None:
-        self.completed_at = datetime.utcnow()
+    def complete(self, score: float, summary: str, score_breakdown: Optional[Dict[str, Any]] = None) -> None:
+        from datetime import timezone
+        self.completed_at = datetime.now(timezone.utc)
         self.final_score = score
         self.feedback_summary = summary
+        if score_breakdown:
+            self.score_breakdown = score_breakdown
 
     @property
     def total_questions(self) -> int:

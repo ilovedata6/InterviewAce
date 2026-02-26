@@ -2,6 +2,9 @@
 LLM Provider Factory — constructs an ordered provider chain with automatic
 fallback.  The primary provider is determined by ``settings.LLM_PRIMARY_PROVIDER``.
 
+If only one API key is configured, returns a single provider (no fallback).
+If neither key is configured, raises ``LLMProviderError`` at call time.
+
 Usage::
 
     from app.infrastructure.llm.factory import get_llm_provider
@@ -12,7 +15,7 @@ Usage::
 from __future__ import annotations
 
 import structlog
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 from app.domain.exceptions import LLMProviderError
@@ -88,10 +91,14 @@ class LLMProviderWithFallback(ILLMProvider):
 
 
 # ------------------------------------------------------------------
-# Factory function
+# Factory helper — safe provider instantiation
 # ------------------------------------------------------------------
 
-def _build_openai_provider() -> OpenAIProvider:
+def _try_build_openai() -> Optional[OpenAIProvider]:
+    """Return an OpenAI provider if the API key is configured, else None."""
+    if not settings.OPENAI_API_KEY:
+        logger.info("openai_provider_skipped", reason="OPENAI_API_KEY is empty")
+        return None
     return OpenAIProvider(
         api_key=settings.OPENAI_API_KEY,
         model=settings.OPENAI_MODEL,
@@ -100,7 +107,11 @@ def _build_openai_provider() -> OpenAIProvider:
     )
 
 
-def _build_gemini_provider() -> GeminiProvider:
+def _try_build_gemini() -> Optional[GeminiProvider]:
+    """Return a Gemini provider if the API key is configured, else None."""
+    if not settings.GEMINI_API_KEY:
+        logger.info("gemini_provider_skipped", reason="GEMINI_API_KEY is empty")
+        return None
     return GeminiProvider(
         api_key=settings.GEMINI_API_KEY,
         model=settings.GEMINI_MODEL,
@@ -111,21 +122,43 @@ def get_llm_provider() -> ILLMProvider:
     """
     Build the composite LLM provider based on ``settings.LLM_PRIMARY_PROVIDER``.
 
-    Returns an ``LLMProviderWithFallback`` wrapping *primary* → *fallback*.
+    Returns an ``LLMProviderWithFallback`` wrapping *primary* → *fallback*
+    when both API keys are available.
+
     If only one API key is available, returns a single provider without fallback.
+    If neither API key is configured, raises ``LLMProviderError``.
     """
     primary_name = settings.LLM_PRIMARY_PROVIDER.lower()
 
+    # Build both providers (returns None if key is empty)
+    openai = _try_build_openai()
+    gemini = _try_build_gemini()
+
+    # Determine primary / fallback based on setting
     if primary_name == "openai":
-        primary = _build_openai_provider()
-        fallback = _build_gemini_provider()
+        primary, fallback = openai, gemini
     elif primary_name == "gemini":
-        primary = _build_gemini_provider()
-        fallback = _build_openai_provider()
+        primary, fallback = gemini, openai
     else:
-        raise ValueError(
+        raise LLMProviderError(
             f"Unknown LLM_PRIMARY_PROVIDER: '{settings.LLM_PRIMARY_PROVIDER}'. "
             "Expected 'openai' or 'gemini'."
         )
 
-    return LLMProviderWithFallback(primary=primary, fallback=fallback)
+    # Return the best available configuration
+    if primary and fallback:
+        return LLMProviderWithFallback(primary=primary, fallback=fallback)
+    elif primary:
+        logger.warning("llm_no_fallback", provider=primary.provider_name)
+        return primary
+    elif fallback:
+        logger.warning(
+            "llm_primary_unavailable_using_fallback",
+            fallback=fallback.provider_name,
+        )
+        return fallback
+    else:
+        raise LLMProviderError(
+            "No LLM provider configured. Set at least one of "
+            "OPENAI_API_KEY or GEMINI_API_KEY in your .env file."
+        )

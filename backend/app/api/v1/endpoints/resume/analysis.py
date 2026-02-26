@@ -6,9 +6,9 @@ from typing import List
 from app.db.session import get_db
 from app.models.user import User
 from app.models.resume import Resume
-from app.schemas.resume import ResumeAnalysisResponse, ResumeStatus
+from app.schemas.resume import ResumeAnalysisResponse
+from app.domain.value_objects.enums import ResumeStatus
 from app.api.deps import get_current_user
-from app.services.resume_parser import parse_and_store_resume  # noqa: F401
 from app.services.ai_analyzer import analyze_resume_content
 
 router = APIRouter()

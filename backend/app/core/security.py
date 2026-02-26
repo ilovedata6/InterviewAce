@@ -397,6 +397,13 @@ def generate_csrf_token() -> str:
     """Generate CSRF token"""
     return str(uuid.uuid4())
 
+
+def generate_share_token() -> str:
+    """Generate a secure, URL-safe share token for resume sharing."""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+
 def verify_csrf_token(token: str, csrf_token: str) -> bool:
     """Verify CSRF token"""
     if not token or not csrf_token:

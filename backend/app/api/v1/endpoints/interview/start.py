@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import get_current_user, get_start_interview_uc
 from app.models.user import User
-from app.schemas.interview import InterviewSessionInDB
+from app.schemas.interview import InterviewSessionInDB, InterviewStartRequest
 from app.application.use_cases.interview import StartInterviewUseCase
+from app.application.dto.interview import StartInterviewInput
 from app.domain.exceptions import EntityNotFoundError, InterviewError
 
 router = APIRouter()
@@ -14,19 +15,35 @@ router = APIRouter()
     response_description="The newly created interview session with generated questions.",
 )
 async def start_interview_session(
+    body: InterviewStartRequest = None,
     current_user: User = Depends(get_current_user),
     use_case: StartInterviewUseCase = Depends(get_start_interview_uc),
 ):
-    """Create a new interview session linked to the user's latest resume.
+    """Create a new interview session linked to the user's resume.
 
-    Generates 12-15 AI-powered questions (technical, behavioral, project-based).
+    Accepts optional configuration:
+    - **resume_id**: specific resume to use (default: latest)
+    - **question_count**: 5–30 (default: 12)
+    - **difficulty**: easy | medium | hard | mixed (default: mixed)
+    - **focus_areas**: list of focus topics (optional)
 
     Raises:
         404: No resume found — upload one first.
         500: Question generation failed.
     """
+    if body is None:
+        body = InterviewStartRequest()
+
+    dto = StartInterviewInput(
+        user_id=current_user.id,
+        resume_id=body.resume_id,
+        question_count=body.question_count,
+        difficulty=body.difficulty,
+        focus_areas=body.focus_areas,
+    )
+
     try:
-        session = await use_case.execute(current_user.id)
+        session = await use_case.execute(dto)
     except EntityNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

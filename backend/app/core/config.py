@@ -109,6 +109,15 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_PORT: int = 587
     EMAIL_FROM: str = ""
+    EMAIL_DEV_MODE: bool = True  # When True, emails are printed to console instead of sent via SMTP
+
+    # ── Frontend URL (used for share links, email verification) ───────────
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # ── Interview Defaults ────────────────────────────────────────────────
+    INTERVIEW_DEFAULT_QUESTION_COUNT: int = 12
+    INTERVIEW_MAX_QUESTION_COUNT: int = 30
+    INTERVIEW_MIN_QUESTION_COUNT: int = 5
 
     # ── LLM — OpenAI (Primary) ────────────────────────────────────────────
     OPENAI_API_KEY: str = ""
@@ -129,11 +138,21 @@ class Settings(BaseSettings):
         """Backward compat: returns GEMINI_API_KEY for v1 services."""
         return self.GEMINI_API_KEY or None
 
-    # ── Redis (future: rate limiting, token blacklist, Celery) ─────────────
+    # ── Redis (Celery broker, token blacklist, rate limiting) ─────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # ── Sentry (error monitoring — leave empty to disable) ────────────────
     SENTRY_DSN: str = ""
+
+    @property
+    def is_email_configured(self) -> bool:
+        """Return True if real SMTP is properly configured."""
+        return bool(
+            self.SMTP_SERVER
+            and self.SMTP_SERVER != "smtp.example.com"
+            and self.SMTP_USERNAME
+            and self.SMTP_PASSWORD
+        )
 
     model_config = {
         "case_sensitive": True,

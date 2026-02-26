@@ -30,18 +30,15 @@ class TestResumeUpload:
     async def test_upload_success_mock_llm(
         self, client: AsyncClient, auth_headers, mock_llm_provider
     ):
-        """Upload a tiny PDF-like file — Celery task is mocked, returns 202."""
+        """Upload a tiny PDF-like file — Celery dispatch is mocked, returns 202."""
         fake_pdf = io.BytesIO(b"%PDF-1.4 fake content for testing")
         fake_pdf.name = "test_resume.pdf"
 
-        # Mock the Celery task .delay() to avoid needing a real broker
-        mock_task_result = MagicMock()
-        mock_task_result.id = "test-celery-task-id-123"
-
         with (
             patch(
-                "app.api.v1.endpoints.resume.upload.parse_resume_task"
-            ) as mock_task,
+                "app.api.v1.endpoints.resume.upload._dispatch_celery_task",
+                return_value="test-celery-task-id-123",
+            ),
             patch(
                 "app.api.v1.endpoints.resume.upload.validate_file",  # skip extension/size check
             ),
@@ -50,8 +47,6 @@ class TestResumeUpload:
             ),
             patch("app.api.v1.endpoints.resume.upload.os.path.getsize", return_value=2048),
         ):
-            mock_task.delay.return_value = mock_task_result
-
             resp = await client.post(
                 API + "/",
                 headers=auth_headers,

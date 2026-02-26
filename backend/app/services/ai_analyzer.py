@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.llm.factory import get_llm_provider
 from app.models.resume import Resume
-from app.schemas.resume import ResumeStatus
+from app.domain.value_objects.enums import ResumeStatus
 
 logger = structlog.get_logger(__name__)
 
@@ -45,5 +45,5 @@ async def analyze_resume_content(resume_id: UUID, db: AsyncSession) -> None:
 
     except Exception as exc:
         logger.error("resume_reanalysis_failed", resume_id=str(resume_id), error=str(exc), exc_info=True)
-        resume.status = ResumeStatus.FAILED
+        resume.status = ResumeStatus.ERROR
         await db.commit()
