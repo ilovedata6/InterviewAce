@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, validator, constr, field_validator
-from typing import Optional, List, Dict
+from typing import Any, Optional, List, Dict, Union
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 import re
 
 # Import enums from domain layer — single source of truth
@@ -69,8 +70,8 @@ class ResumeAnalysis(BaseModel):
     confidence_score: float = Field(..., ge=0, le=1, description="Confidence score of the analysis")
 
 class ResumeInDB(ResumeBase):
-    id: str
-    user_id: str
+    id: Union[UUID, str]
+    user_id: Union[UUID, str]
     file_path: str
     file_name: str
     file_size: int
@@ -81,9 +82,9 @@ class ResumeInDB(ResumeBase):
     skills: List[str] = Field(default_factory=list, description="List of skills extracted from the resume")
     created_at: datetime
     updated_at: datetime
-    analysis: Optional[ResumeAnalysis] = None
+    analysis: Optional[Dict[str, Any]] = None
     version: int = Field(default=1, ge=1)
-    parent_version_id: Optional[str] = None
+    parent_version_id: Optional[Union[UUID, str]] = None
     is_public: bool = False
     share_token: Optional[str] = None
 

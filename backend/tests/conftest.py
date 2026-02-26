@@ -222,3 +222,60 @@ def auth_headers(auth_token: str) -> dict:
 def mock_llm_provider() -> MockLLMProvider:
     """Return a deterministic mock LLM provider."""
     return MockLLMProvider()
+
+
+@pytest.fixture(autouse=True)
+def _disable_rate_limiter():
+    """Disable SlowAPI rate limiting in every test so requests don't get 429."""
+    from app.core.middleware import limiter
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
+
+
+@pytest.fixture
+async def unverified_user(db_session: AsyncSession) -> User:
+    """Insert and return an unverified test user."""
+    user = User(
+        id=uuid.uuid4(),
+        full_name="Unverified User",
+        email="unverified@example.com",
+        hashed_password=get_password_hash("Test@1234"),
+        is_active=True,
+        is_email_verified=False,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+async def test_resume(db_session: AsyncSession, test_user: User) -> Resume:
+    """Insert and return a fully analyzed resume for the test user."""
+    resume = Resume(
+        id=uuid.uuid4(),
+        user_id=test_user.id,
+        title="Test Resume",
+        description="Test description",
+        file_path="/tmp/test_resume.pdf",
+        file_name="test_resume.pdf",
+        file_size=1024,
+        file_type="PDF",
+        inferred_role="Software Engineer",
+        status="analyzed",
+        analysis={
+            "experience": [
+                {"job_title": "SWE", "company": "Test", "description": "Built things"}
+            ],
+            "education": [{"degree": "BSc"}],
+            "skills": ["Python"],
+        },
+        skills=["Python", "FastAPI"],
+        years_of_experience=3,
+        confidence_score=0.9,
+    )
+    db_session.add(resume)
+    await db_session.commit()
+    await db_session.refresh(resume)
+    return resume
