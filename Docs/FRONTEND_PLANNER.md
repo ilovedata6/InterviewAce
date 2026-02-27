@@ -90,11 +90,11 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F4.1 | Create `middleware.ts` — check `access_token` cookie, redirect unauthenticated users to /login, redirect authenticated users away from /login | `feat(fe): add auth middleware` | ⬜ |
-| F4.2 | Create `stores/auth-store.ts` — zustand store: user, isAuthenticated, login(), logout(), fetchUser() | `feat(fe): create auth store` | ⬜ |
-| F4.3 | Create `hooks/use-auth.ts` — wrapper hook exposing auth store + React Query for /me | `feat(fe): create auth hook` | ⬜ |
-| F4.4 | Create auth provider in root layout — fetch user on mount, populate store | `feat(fe): add auth provider to root layout` | ⬜ |
-| F4.5 | Create admin role guard — redirect non-admin from /admin/* routes | `feat(fe): add admin role guard` | ⬜ |
+| F4.1 | Create `middleware.ts` — check `access_token` cookie, redirect unauthenticated users to /login, redirect authenticated users away from /login | `feat(fe): add auth middleware` | ✅ |
+| F4.2 | Create `stores/auth-store.ts` — zustand store: user, isAuthenticated, login(), logout(), fetchUser() | `feat(fe): create auth store` | ✅ |
+| F4.3 | Create `hooks/use-auth.ts` — wrapper hook exposing auth store + React Query for /me | `feat(fe): create auth hook` | ✅ |
+| F4.4 | Create auth provider in root layout — fetch user on mount, populate store | `feat(fe): add auth provider to root layout` | ✅ |
+| F4.5 | Create admin role guard — redirect non-admin from /admin/* routes | `feat(fe): add admin role guard` | ✅ |
 
 **Checkpoint:** Unauthenticated → redirected to /login. Authenticated → allowed into /dashboard. Admin routes protected.
 
@@ -274,7 +274,7 @@
 | F1 | Design System & Shared Components | 9 | ✅ |
 | F2 | TypeScript Types & API Client | 8 | ✅ |
 | F3 | BFF Proxy Layer | 14 | ✅ |
-| F4 | Auth Middleware & Store | 5 | ⬜ |
+| F4 | Auth Middleware & Store | 5 | ✅ |
 | F5 | Landing Page | 4 | ⬜ |
 | F6 | Auth Pages | 9 | ⬜ |
 | F7 | Dashboard Page | 5 | ⬜ |
