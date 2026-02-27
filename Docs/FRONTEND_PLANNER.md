@@ -105,10 +105,10 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F5.1 | Create `app/page.tsx` — hero section: headline, subheadline, CTA buttons (Get Started, Login) | `feat(fe): create landing page hero` | ⬜ |
-| F5.2 | Add features section — 3 cards: AI Interviews, Resume Analysis, Progress Tracking | `feat(fe): landing page features section` | ⬜ |
-| F5.3 | Add footer with links | `feat(fe): landing page footer` | ⬜ |
-| F5.4 | Make fully responsive (mobile/tablet/desktop) | `style(fe): responsive landing page` | ⬜ |
+| F5.1 | Create `app/page.tsx` — hero section: headline, subheadline, CTA buttons (Get Started, Login) | `feat(fe): create landing page hero` | ✅ |
+| F5.2 | Add features section — 3 cards: AI Interviews, Resume Analysis, Progress Tracking | `feat(fe): landing page features section` | ✅ |
+| F5.3 | Add footer with links | `feat(fe): landing page footer` | ✅ |
+| F5.4 | Make fully responsive (mobile/tablet/desktop) | `style(fe): responsive landing page` | ✅ |
 
 **Checkpoint:** Landing page renders at `/`. Looks professional. Links go to /login and /register.
 
@@ -275,7 +275,7 @@
 | F2 | TypeScript Types & API Client | 8 | ✅ |
 | F3 | BFF Proxy Layer | 14 | ✅ |
 | F4 | Auth Middleware & Store | 5 | ✅ |
-| F5 | Landing Page | 4 | ⬜ |
+| F5 | Landing Page | 4 | ✅ |
 | F6 | Auth Pages | 9 | ⬜ |
 | F7 | Dashboard Page | 5 | ⬜ |
 | F8 | Resume Module | 10 | ⬜ |
