@@ -50,6 +50,9 @@ export const API_ROUTES = {
     SUMMARY: (id: string) => `/api/interviews/${id}/summary`,
     HISTORY: "/api/interviews/history",
   },
+  DASHBOARD: {
+    STATS: "/api/dashboard/stats",
+  },
   ADMIN: {
     USERS: "/api/admin/users",
     STATS: "/api/admin/stats",
