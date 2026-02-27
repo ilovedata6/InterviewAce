@@ -119,15 +119,15 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F6.1 | Create `components/auth/login-form.tsx` — email + password + "Forgot password?" link. Uses react-hook-form + zod | `feat(fe): create login form` | ⬜ |
-| F6.2 | Create `app/(auth)/login/page.tsx` — renders login form in auth layout + handles submit → BFF → redirect to /dashboard | `feat(fe): create login page` | ⬜ |
-| F6.3 | Create `components/auth/register-form.tsx` — name + email + password + confirm password | `feat(fe): create register form` | ⬜ |
-| F6.4 | Create `app/(auth)/register/page.tsx` — register + success message ("Check your email") | `feat(fe): create register page` | ⬜ |
-| F6.5 | Create `app/(auth)/verify-email/page.tsx` — reads token from URL, calls verify, shows success/failure | `feat(fe): create email verification page` | ⬜ |
-| F6.6 | Create `app/(auth)/forgot-password/page.tsx` — email input, "Reset link sent" message | `feat(fe): create forgot password page` | ⬜ |
-| F6.7 | Create `app/(auth)/reset-password/page.tsx` — new password + confirm, reads token from URL | `feat(fe): create reset password page` | ⬜ |
-| F6.8 | Wire up toast notifications for all auth actions (success, errors) | `feat(fe): add auth toast notifications` | ⬜ |
-| F6.9 | Add form validation error display (inline under each field) | `style(fe): inline form validation errors` | ⬜ |
+| F6.1 | Create `components/auth/login-form.tsx` — email + password + "Forgot password?" link. Uses react-hook-form + zod | `feat(fe): create login form` | ✅ |
+| F6.2 | Create `app/(auth)/login/page.tsx` — renders login form in auth layout + handles submit → BFF → redirect to /dashboard | `feat(fe): create login page` | ✅ |
+| F6.3 | Create `components/auth/register-form.tsx` — name + email + password + confirm password | `feat(fe): create register form` | ✅ |
+| F6.4 | Create `app/(auth)/register/page.tsx` — register + success message ("Check your email") | `feat(fe): create register page` | ✅ |
+| F6.5 | Create `app/(auth)/verify-email/page.tsx` — reads token from URL, calls verify, shows success/failure | `feat(fe): create email verification page` | ✅ |
+| F6.6 | Create `app/(auth)/forgot-password/page.tsx` — email input, "Reset link sent" message | `feat(fe): create forgot password page` | ✅ |
+| F6.7 | Create `app/(auth)/reset-password/page.tsx` — new password + confirm, reads token from URL | `feat(fe): create reset password page` | ✅ |
+| F6.8 | Wire up toast notifications for all auth actions (success, errors) | `feat(fe): add auth toast notifications` | ✅ |
+| F6.9 | Add form validation error display (inline under each field) | `style(fe): inline form validation errors` | ✅ |
 
 **Checkpoint:** Full auth flow works end-to-end. User can register → verify email → login → see dashboard.
 
@@ -276,7 +276,7 @@
 | F3 | BFF Proxy Layer | 14 | ✅ |
 | F4 | Auth Middleware & Store | 5 | ✅ |
 | F5 | Landing Page | 4 | ✅ |
-| F6 | Auth Pages | 9 | ⬜ |
+| F6 | Auth Pages | 9 | ✅ |
 | F7 | Dashboard Page | 5 | ⬜ |
 | F8 | Resume Module | 10 | ⬜ |
 | F9 | Interview Module | 13 | ⬜ |
