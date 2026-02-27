@@ -17,6 +17,7 @@ eggs/
 .eggs/
 .vscode/
 /lib/
+.next/
 lib64/
 parts/
 sdist/

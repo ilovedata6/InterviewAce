@@ -12,6 +12,9 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
+import { ScoreTrendChart } from "@/components/dashboard/score-trend-chart";
+import { SkillRadarChart } from "@/components/dashboard/skill-radar-chart";
+import { InterviewFrequencyChart } from "@/components/dashboard/interview-frequency-chart";
 import { useDashboardStats } from "@/hooks/use-dashboard";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -65,6 +68,15 @@ export default function DashboardPage() {
         <RecentActivity sessions={data?.recent_sessions} isLoading={isLoading} />
         <CategoryBreakdown data={data?.category_breakdown} isLoading={isLoading} />
       </div>
+
+      {/* Charts row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ScoreTrendChart sessions={data?.recent_sessions ?? []} />
+        <SkillRadarChart breakdown={data?.category_breakdown ?? {}} />
+      </div>
+
+      {/* Interview frequency */}
+      <InterviewFrequencyChart sessions={data?.recent_sessions ?? []} />
     </div>
   );
 }
