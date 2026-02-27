@@ -152,7 +152,7 @@ async def admin_deactivate_user(
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user.is_active = False
+    user.is_active = False  # type: ignore[assignment]
     await db.commit()
     return {"detail": f"User {user_id} deactivated."}
 
@@ -172,6 +172,6 @@ async def admin_activate_user(
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user.is_active = True
+    user.is_active = True  # type: ignore[assignment]
     await db.commit()
     return {"detail": f"User {user_id} activated."}
