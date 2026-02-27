@@ -147,7 +147,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
-Docs/
+# Docs/  — Commented out: we want project Docs/ tracked in git
 
 # mypy
 .mypy_cache/
