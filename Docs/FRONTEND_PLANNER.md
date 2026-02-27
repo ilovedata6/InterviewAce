@@ -173,19 +173,19 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F9.1 | Create `stores/interview-store.ts` — zustand store: session state machine (configuring → loading → answering → submitting → feedback → completing → summary) | `feat(fe): create interview state store` | ⬜ |
-| F9.2 | Create `hooks/use-interview.ts` — React Query + zustand integration for interview flow | `feat(fe): create interview hooks` | ⬜ |
-| F9.3 | Create `components/interview/interview-config.tsx` — form: select resume, question count, difficulty (from Tier 1 improvements) | `feat(fe): create interview config form` | ⬜ |
-| F9.4 | Create `app/(app)/interviews/start/page.tsx` — config page → "Start" button → POST /start → redirect to session | `feat(fe): create interview start page` | ⬜ |
-| F9.5 | Create `components/interview/question-display.tsx` — shows current question text, question number (e.g., "Question 3 of 10") | `feat(fe): create question display component` | ⬜ |
-| F9.6 | Create `components/interview/answer-input.tsx` — textarea with character count, timer, "Submit Answer" button | `feat(fe): create answer input component` | ⬜ |
-| F9.7 | Create `components/interview/progress-bar.tsx` — visual progress through questions | `feat(fe): create interview progress bar` | ⬜ |
-| F9.8 | Create `app/(app)/interviews/[sessionId]/page.tsx` — live interview page: question → answer → next question loop | `feat(fe): create live interview page` | ⬜ |
-| F9.9 | Create `components/interview/interview-summary.tsx` — final score, feedback, per-question breakdown | `feat(fe): create interview summary component` | ⬜ |
-| F9.10 | Create `components/interview/score-breakdown.tsx` — visual score display (bar chart or radar) | `feat(fe): create score breakdown chart` | ⬜ |
-| F9.11 | Create `app/(app)/interviews/[sessionId]/summary/page.tsx` — summary page | `feat(fe): create interview summary page` | ⬜ |
-| F9.12 | Create `components/interview/interview-history-table.tsx` — sortable table: date, resume used, score, status | `feat(fe): create interview history table` | ⬜ |
-| F9.13 | Create `app/(app)/interviews/page.tsx` — interview history list | `feat(fe): create interview history page` | ⬜ |
+| F9.1 | Create `stores/interview-store.ts` — zustand store: session state machine (configuring → loading → answering → submitting → feedback → completing → summary) | `feat(fe): create interview state store` | ✅ |
+| F9.2 | Create `hooks/use-interview.ts` — React Query + zustand integration for interview flow | `feat(fe): create interview hooks` | ✅ |
+| F9.3 | Create `components/interview/interview-config.tsx` — form: select resume, question count, difficulty (from Tier 1 improvements) | `feat(fe): create interview config form` | ✅ |
+| F9.4 | Create `app/(app)/interviews/start/page.tsx` — config page → "Start" button → POST /start → redirect to session | `feat(fe): create interview start page` | ✅ |
+| F9.5 | Create `components/interview/question-display.tsx` — shows current question text, question number (e.g., "Question 3 of 10") | `feat(fe): create question display component` | ✅ |
+| F9.6 | Create `components/interview/answer-input.tsx` — textarea with character count, timer, "Submit Answer" button | `feat(fe): create answer input component` | ✅ |
+| F9.7 | Create `components/interview/progress-bar.tsx` — visual progress through questions | `feat(fe): create interview progress bar` | ✅ |
+| F9.8 | Create `app/(app)/interviews/[sessionId]/page.tsx` — live interview page: question → answer → next question loop | `feat(fe): create live interview page` | ✅ |
+| F9.9 | Create `components/interview/interview-summary.tsx` — final score, feedback, per-question breakdown | `feat(fe): create interview summary component` | ✅ |
+| F9.10 | Create `components/interview/score-breakdown.tsx` — visual score display (bar chart or radar) | `feat(fe): create score breakdown chart` | ✅ |
+| F9.11 | Create `app/(app)/interviews/[sessionId]/summary/page.tsx` — summary page | `feat(fe): create interview summary page` | ✅ |
+| F9.12 | Create `components/interview/interview-history-table.tsx` — sortable table: date, resume used, score, status | `feat(fe): create interview history table` | ✅ |
+| F9.13 | Create `app/(app)/interviews/page.tsx` — interview history list | `feat(fe): create interview history page` | ✅ |
 
 **Checkpoint:** Full interview flow works: configure → start → answer questions → see summary. History shows past interviews.
 
