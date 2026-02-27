@@ -153,16 +153,16 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F8.1 | Create `hooks/use-resumes.ts` — React Query hooks: useResumes, useResume, useUploadResume, useDeleteResume | `feat(fe): create resume hooks` | ⬜ |
-| F8.2 | Create `components/resume/resume-card.tsx` — card showing filename, date, status badge (pending/analyzed/failed) | `feat(fe): create resume card component` | ⬜ |
-| F8.3 | Create `app/(app)/resumes/page.tsx` — grid of resume cards + "Upload" button | `feat(fe): create resume list page` | ⬜ |
-| F8.4 | Create `components/resume/resume-upload-zone.tsx` — drag-and-drop with react-dropzone, file type/size validation | `feat(fe): create resume upload component` | ⬜ |
-| F8.5 | Create `app/(app)/resumes/upload/page.tsx` — upload page with progress indicator | `feat(fe): create resume upload page` | ⬜ |
-| F8.6 | Create `components/resume/resume-analysis.tsx` — structured display: skills, experience, education, summary | `feat(fe): create resume analysis display` | ⬜ |
-| F8.7 | Create `app/(app)/resumes/[id]/page.tsx` — resume detail: file info + analysis + versions + actions (delete, export, share) | `feat(fe): create resume detail page` | ⬜ |
-| F8.8 | Create `components/resume/resume-versions.tsx` — version timeline showing upload dates and changes | `feat(fe): create version history component` | ⬜ |
-| F8.9 | Add polling for resume analysis status (pending → analyzed) | `feat(fe): poll resume analysis status` | ⬜ |
-| F8.10 | Add delete confirmation dialog | `feat(fe): resume delete confirmation` | ⬜ |
+| F8.1 | Create `hooks/use-resumes.ts` — React Query hooks: useResumes, useResume, useUploadResume, useDeleteResume | `feat(fe): create resume hooks` | ✅ |
+| F8.2 | Create `components/resume/resume-card.tsx` — card showing filename, date, status badge (pending/analyzed/failed) | `feat(fe): create resume card component` | ✅ |
+| F8.3 | Create `app/(app)/resumes/page.tsx` — grid of resume cards + "Upload" button | `feat(fe): create resume list page` | ✅ |
+| F8.4 | Create `components/resume/resume-upload-zone.tsx` — drag-and-drop with react-dropzone, file type/size validation | `feat(fe): create resume upload component` | ✅ |
+| F8.5 | Create `app/(app)/resumes/upload/page.tsx` — upload page with progress indicator | `feat(fe): create resume upload page` | ✅ |
+| F8.6 | Create `components/resume/resume-analysis.tsx` — structured display: skills, experience, education, summary | `feat(fe): create resume analysis display` | ✅ |
+| F8.7 | Create `app/(app)/resumes/[id]/page.tsx` — resume detail: file info + analysis + versions + actions (delete, export, share) | `feat(fe): create resume detail page` | ✅ |
+| F8.8 | Create `components/resume/resume-versions.tsx` — version timeline showing upload dates and changes | `feat(fe): create version history component` | ✅ |
+| F8.9 | Add polling for resume analysis status (pending → analyzed) | `feat(fe): poll resume analysis status` | ✅ |
+| F8.10 | Add delete confirmation dialog | `feat(fe): resume delete confirmation` | ✅ |
 
 **Checkpoint:** Can upload PDF/DOCX, see it in list, view analysis results, browse versions, delete.
 
@@ -278,7 +278,7 @@
 | F5 | Landing Page | 4 | ✅ |
 | F6 | Auth Pages | 9 | ✅ |
 | F7 | Dashboard Page | 5 | ✅ |
-| F8 | Resume Module | 10 | ⬜ |
+| F8 | Resume Module | 10 | ✅ |
 | F9 | Interview Module | 13 | ⬜ |
 | F10 | Profile & Settings | 3 | ⬜ |
 | F11 | Admin Panel | 4 | ⬜ |
