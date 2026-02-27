@@ -6,8 +6,8 @@ export default function Home() {
           Interview<span className="text-blue-600">Ace</span>
         </h1>
         <p className="max-w-md text-lg text-zinc-600 dark:text-zinc-400">
-          AI-Powered Interview Preparation. Practice with intelligent questions,
-          get instant feedback, and land your dream job.
+          AI-Powered Interview Preparation. Practice with intelligent questions, get instant
+          feedback, and land your dream job.
         </p>
         <div className="flex gap-4">
           <a
