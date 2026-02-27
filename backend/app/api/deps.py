@@ -11,30 +11,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
-
-from app.core.security import verify_token
-from app.db.session import get_db
-from app.models.user import User
-from app.domain.value_objects.enums import UserRole
-
-# ── Repository interfaces ───────────────────────────────────────────────────
-from app.domain.interfaces.repositories import (
-    IAuthRepository,
-    IInterviewRepository,
-    IResumeRepository,
-    IUserRepository,
-)
-from app.domain.interfaces.llm_provider import ILLMProvider
-
-# ── Concrete repositories ──────────────────────────────────────────────────
-from app.infrastructure.persistence.repositories import (
-    AuthRepository,
-    InterviewRepository,
-    ResumeRepository,
-    UserRepository,
-)
-from app.infrastructure.llm.factory import get_llm_provider
 
 # ── Use cases ───────────────────────────────────────────────────────────────
 from app.application.use_cases.auth import (
@@ -64,6 +40,28 @@ from app.application.use_cases.resume import (
     UpdateResumeUseCase,
     UploadResumeUseCase,
 )
+from app.core.security import verify_token
+from app.db.session import get_db
+from app.domain.interfaces.llm_provider import ILLMProvider
+
+# ── Repository interfaces ───────────────────────────────────────────────────
+from app.domain.interfaces.repositories import (
+    IAuthRepository,
+    IInterviewRepository,
+    IResumeRepository,
+    IUserRepository,
+)
+from app.domain.value_objects.enums import UserRole
+from app.infrastructure.llm.factory import get_llm_provider
+
+# ── Concrete repositories ──────────────────────────────────────────────────
+from app.infrastructure.persistence.repositories import (
+    AuthRepository,
+    InterviewRepository,
+    ResumeRepository,
+    UserRepository,
+)
+from app.models.user import User
 
 # ── Bearer token scheme ─────────────────────────────────────────────────────
 bearer_scheme = HTTPBearer()
@@ -72,6 +70,7 @@ bearer_scheme = HTTPBearer()
 # =====================================================================
 # Authentication dependencies
 # =====================================================================
+
 
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
@@ -83,20 +82,20 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     payload = await verify_token(token, db)
     if payload is None:
         raise credentials_exception
-    
+
     user_id: str = payload.get("sub")
     if user_id is None:
         raise credentials_exception
-    
+
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
     if user is None:
         raise credentials_exception
-    
+
     return user
 
 
@@ -131,6 +130,7 @@ def require_role(*allowed_roles: UserRole):
 # Repository factories
 # =====================================================================
 
+
 async def get_user_repo(db: AsyncSession = Depends(get_db)) -> IUserRepository:
     return UserRepository(db)
 
@@ -154,6 +154,7 @@ def get_llm() -> ILLMProvider:
 # =====================================================================
 # Auth use-case factories
 # =====================================================================
+
 
 async def get_register_uc(
     user_repo: IUserRepository = Depends(get_user_repo),
@@ -216,6 +217,7 @@ async def get_reset_password_confirm_uc(
 # Interview use-case factories
 # =====================================================================
 
+
 async def get_start_interview_uc(
     interview_repo: IInterviewRepository = Depends(get_interview_repo),
     resume_repo: IResumeRepository = Depends(get_resume_repo),
@@ -265,6 +267,7 @@ async def get_summary_uc(
 # =====================================================================
 # Resume use-case factories
 # =====================================================================
+
 
 async def get_upload_resume_uc(
     resume_repo: IResumeRepository = Depends(get_resume_repo),

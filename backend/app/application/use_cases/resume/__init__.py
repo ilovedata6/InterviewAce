@@ -8,14 +8,12 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
 
 import structlog
 
 from app.application.dto.resume import ResumeListInput, ResumeUpdateInput, ResumeUploadInput
 from app.domain.entities.resume import ResumeEntity
-from app.domain.exceptions import EntityNotFoundError, FileValidationError
+from app.domain.exceptions import EntityNotFoundError
 from app.domain.interfaces.repositories import IResumeRepository
 from app.domain.value_objects.enums import FileType, ResumeStatus
 
@@ -23,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 
 # ── Upload Resume ───────────────────────────────────────────────────────────
+
 
 class UploadResumeUseCase:
     """Create a placeholder resume record and dispatch background parsing."""
@@ -45,15 +44,14 @@ class UploadResumeUseCase:
 
 # ── List Resumes ────────────────────────────────────────────────────────────
 
+
 class ListResumesUseCase:
     """List resumes for a user with pagination and filtering."""
 
     def __init__(self, resume_repo: IResumeRepository) -> None:
         self._resume_repo = resume_repo
 
-    async def execute(
-        self, dto: ResumeListInput
-    ) -> Tuple[List[ResumeEntity], int]:
+    async def execute(self, dto: ResumeListInput) -> tuple[list[ResumeEntity], int]:
         items = await self._resume_repo.get_by_user_id_filtered(
             dto.user_id,
             skip=dto.skip,
@@ -71,6 +69,7 @@ class ListResumesUseCase:
 
 # ── Get Resume ──────────────────────────────────────────────────────────────
 
+
 class GetResumeUseCase:
     """Get a specific resume owned by the user."""
 
@@ -85,6 +84,7 @@ class GetResumeUseCase:
 
 
 # ── Update Resume ───────────────────────────────────────────────────────────
+
 
 class UpdateResumeUseCase:
     """Update resume metadata (title, description)."""
@@ -106,6 +106,7 @@ class UpdateResumeUseCase:
 
 
 # ── Delete Resume ───────────────────────────────────────────────────────────
+
 
 class DeleteResumeUseCase:
     """Delete a resume and its file from disk."""

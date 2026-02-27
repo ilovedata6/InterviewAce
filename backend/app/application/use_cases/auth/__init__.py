@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from typing import Optional
+from datetime import UTC, datetime
 
 from app.application.dto.auth import (
     ChangePasswordInput,
@@ -28,18 +28,18 @@ from app.core.security import (
 )
 from app.domain.entities.user import UserEntity
 from app.domain.exceptions import (
+    AccountLockedError,
     AuthenticationError,
     DuplicateEntityError,
     EntityNotFoundError,
-    AccountLockedError,
     ValidationError,
 )
 from app.domain.interfaces.repositories import IAuthRepository, IUserRepository
-from app.utils.email_utils import send_verification_email
 from app.utils.email_service import send_email
-
+from app.utils.email_utils import send_verification_email
 
 # ── Register ────────────────────────────────────────────────────────────────
+
 
 class RegisterUseCase:
     """Create a new user account and send a verification email."""
@@ -70,6 +70,7 @@ class RegisterUseCase:
 
 
 # ── Login ───────────────────────────────────────────────────────────────────
+
 
 class LoginUseCase:
     """Authenticate user credentials and return a JWT token pair."""
@@ -123,6 +124,7 @@ class LoginUseCase:
 
 # ── Logout ──────────────────────────────────────────────────────────────────
 
+
 class LogoutUseCase:
     """Revoke tokens and deactivate the user session."""
 
@@ -133,10 +135,9 @@ class LogoutUseCase:
         self,
         token: str,
         user_id: uuid.UUID,
-        session_id: Optional[str],
+        session_id: str | None,
         db,  # AsyncSession — needed by verify_token
     ) -> str:
-        from datetime import datetime, timezone
 
         try:
             payload = await verify_token(token, db)
@@ -144,11 +145,12 @@ class LogoutUseCase:
                 token_id = payload.get("jti")
                 if token_id and not await self._auth_repo.is_token_blacklisted(token_id):
                     exp_ts = payload.get("exp", 0)
-                    ttl = max(int(exp_ts - datetime.now(timezone.utc).timestamp()), 1)
+                    ttl = max(int(exp_ts - datetime.now(UTC).timestamp()), 1)
 
                     # Redis blacklist (best-effort)
                     try:
                         from app.infrastructure.cache.redis_client import RedisTokenBlacklist
+
                         await RedisTokenBlacklist.revoke(token_id, ttl_seconds=ttl, reason="logout")
                     except Exception:
                         pass
@@ -157,7 +159,7 @@ class LogoutUseCase:
                     await self._auth_repo.blacklist_token(
                         token_id=token_id,
                         user_id=user_id,
-                        expires_at=datetime.fromtimestamp(payload["exp"], timezone.utc),
+                        expires_at=datetime.fromtimestamp(payload["exp"], UTC),
                         reason="logout",
                     )
         except Exception:
@@ -170,6 +172,7 @@ class LogoutUseCase:
 
 
 # ── Refresh Token ───────────────────────────────────────────────────────────
+
 
 class RefreshTokenUseCase:
     """Exchange a valid refresh token for a new token pair."""
@@ -186,6 +189,7 @@ class RefreshTokenUseCase:
 
 
 # ── Change Password ─────────────────────────────────────────────────────────
+
 
 class ChangePasswordUseCase:
     """Change the password of an authenticated user."""
@@ -211,6 +215,7 @@ class ChangePasswordUseCase:
 
 # ── Verify Email ────────────────────────────────────────────────────────────
 
+
 class VerifyEmailUseCase:
     """Confirm a user's email address via a one-time token."""
 
@@ -220,8 +225,8 @@ class VerifyEmailUseCase:
     async def execute(self, token: str) -> str:
         try:
             user_id_str = verify_email_verification_token(token)
-        except Exception:
-            raise ValidationError("Invalid or expired verification token.")
+        except Exception as exc:
+            raise ValidationError("Invalid or expired verification token.") from exc
 
         user = await self._user_repo.get_by_id(uuid.UUID(user_id_str))
         if not user:
@@ -236,6 +241,7 @@ class VerifyEmailUseCase:
 
 
 # ── Resend Verification ────────────────────────────────────────────────────
+
 
 class ResendVerificationUseCase:
     """Resend the verification email to a registered user."""
@@ -253,6 +259,7 @@ class ResendVerificationUseCase:
 
 
 # ── Reset Password Request ─────────────────────────────────────────────────
+
 
 class ResetPasswordRequestUseCase:
     """Initiate the forgot-password flow."""
@@ -285,6 +292,7 @@ class ResetPasswordRequestUseCase:
 
 
 # ── Reset Password Confirm ─────────────────────────────────────────────────
+
 
 class ResetPasswordConfirmUseCase:
     """Complete the password-reset flow using a token."""

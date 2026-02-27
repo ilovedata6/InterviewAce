@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict
+from typing import Any
 
 import structlog
 
 logger = structlog.get_logger(__name__)
 
 
-def _get_analysis(resume) -> Dict[str, Any]:
+def _get_analysis(resume) -> dict[str, Any]:
     """Safely extract analysis dict from a Resume model."""
     analysis = getattr(resume, "analysis", None) or {}
     if not isinstance(analysis, dict):
@@ -26,6 +26,7 @@ def _get_analysis(resume) -> Dict[str, Any]:
 
 
 # ── TXT Export ──────────────────────────────────────────────────────────────
+
 
 async def export_to_txt(resume, base_path: str) -> str:
     """Export resume analysis as a formatted plain-text file."""
@@ -80,7 +81,7 @@ async def export_to_txt(resume, base_path: str) -> str:
     recommendations = analysis.get("recommendations", [])
     if recommendations:
         lines += ["RECOMMENDATIONS", "-" * 40]
-        lines += [f"  {i+1}. {r}" for i, r in enumerate(recommendations)]
+        lines += [f"  {i + 1}. {r}" for i, r in enumerate(recommendations)]
         lines.append("")
 
     with open(file_path, "w", encoding="utf-8") as f:
@@ -91,6 +92,7 @@ async def export_to_txt(resume, base_path: str) -> str:
 
 
 # ── JSON Export ─────────────────────────────────────────────────────────────
+
 
 async def export_to_json(resume, base_path: str) -> str:
     """Export resume analysis as a structured JSON file."""
@@ -119,6 +121,7 @@ async def export_to_json(resume, base_path: str) -> str:
 
 # ── PDF Export ──────────────────────────────────────────────────────────────
 
+
 async def export_to_pdf(resume, base_path: str) -> str:
     """Export resume analysis as a PDF file.
 
@@ -129,8 +132,8 @@ async def export_to_pdf(resume, base_path: str) -> str:
 
     try:
         from reportlab.lib.pagesizes import letter
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
         from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
         analysis = _get_analysis(resume)
         doc = SimpleDocTemplate(file_path, pagesize=letter)
@@ -176,7 +179,9 @@ async def export_to_pdf(resume, base_path: str) -> str:
                 institution = edu.get("institution", "")
                 degree = edu.get("degree", "")
                 field = edu.get("field_of_study", "")
-                story.append(Paragraph(f"<b>{degree}</b> in {field} — {institution}", styles["Normal"]))
+                story.append(
+                    Paragraph(f"<b>{degree}</b> in {field} — {institution}", styles["Normal"])
+                )
                 story.append(Spacer(1, 6))
 
         doc.build(story)
@@ -194,6 +199,7 @@ async def export_to_pdf(resume, base_path: str) -> str:
 
 # ── DOCX Export ─────────────────────────────────────────────────────────────
 
+
 async def export_to_docx(resume, base_path: str) -> str:
     """Export resume analysis as a DOCX file.
 
@@ -204,7 +210,6 @@ async def export_to_docx(resume, base_path: str) -> str:
 
     try:
         from docx import Document
-        from docx.shared import Pt
 
         doc = Document()
         doc.add_heading(getattr(resume, "title", "Resume"), level=0)

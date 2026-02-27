@@ -14,14 +14,15 @@ Usage::
 
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
-from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 from app.domain.exceptions import LLMProviderError
 from app.domain.interfaces.llm_provider import ILLMProvider
-from app.infrastructure.llm.openai_provider import OpenAIProvider
 from app.infrastructure.llm.gemini_provider import GeminiProvider
+from app.infrastructure.llm.openai_provider import OpenAIProvider
 
 logger = structlog.get_logger(__name__)
 
@@ -77,16 +78,16 @@ class LLMProviderWithFallback(ILLMProvider):
     # ILLMProvider interface
     # ------------------------------------------------------------------
 
-    def generate_questions(self, prompts: Dict[str, str]) -> List[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
         return self._call_with_fallback("generate_questions", prompts)
 
-    def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
+    def generate_feedback(self, prompts: dict[str, str]) -> dict[str, Any]:
         return self._call_with_fallback("generate_feedback", prompts)
 
     def generate_completion(self, prompt: str) -> str:
         return self._call_with_fallback("generate_completion", prompt)
 
-    def parse_resume(self, text: str) -> Dict[str, Any]:
+    def parse_resume(self, text: str) -> dict[str, Any]:
         return self._call_with_fallback("parse_resume", text)
 
 
@@ -94,7 +95,8 @@ class LLMProviderWithFallback(ILLMProvider):
 # Factory helper — safe provider instantiation
 # ------------------------------------------------------------------
 
-def _try_build_openai() -> Optional[OpenAIProvider]:
+
+def _try_build_openai() -> OpenAIProvider | None:
     """Return an OpenAI provider if the API key is configured, else None."""
     if not settings.OPENAI_API_KEY:
         logger.info("openai_provider_skipped", reason="OPENAI_API_KEY is empty")
@@ -107,7 +109,7 @@ def _try_build_openai() -> Optional[OpenAIProvider]:
     )
 
 
-def _try_build_gemini() -> Optional[GeminiProvider]:
+def _try_build_gemini() -> GeminiProvider | None:
     """Return a Gemini provider if the API key is configured, else None."""
     if not settings.GEMINI_API_KEY:
         logger.info("gemini_provider_skipped", reason="GEMINI_API_KEY is empty")

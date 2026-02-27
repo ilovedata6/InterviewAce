@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -18,8 +17,8 @@ class UserEntity:
     hashed_password: str = ""
     is_active: bool = True
     is_email_verified: bool = False
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # ------------------------------------------------------------------
     # Domain behaviour

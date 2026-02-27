@@ -1,11 +1,12 @@
 """Interview ORM models — infrastructure persistence layer."""
 
-from sqlalchemy import Column, String, UUID, ForeignKey, Float, Text, DateTime, Integer, JSON, Index
-from sqlalchemy.orm import relationship
 import uuid
 
-from app.infrastructure.persistence.models.base import Base, TimestampMixin
+from sqlalchemy import JSON, UUID, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 from app.domain.value_objects.enums import InterviewDifficulty, QuestionCategory
+from app.infrastructure.persistence.models.base import Base, TimestampMixin
 
 
 class InterviewSession(Base, TimestampMixin):
@@ -29,16 +30,16 @@ class InterviewSession(Base, TimestampMixin):
     resume = relationship("Resume", back_populates="interview_sessions")
     questions = relationship("InterviewQuestion", back_populates="session")
 
-    __table_args__ = (
-        Index("ix_interview_sessions_user_completed", "user_id", "completed_at"),
-    )
+    __table_args__ = (Index("ix_interview_sessions_user_completed", "user_id", "completed_at"),)
 
 
 class InterviewQuestion(Base, TimestampMixin):
     __tablename__ = "interview_questions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("interview_sessions.id"), nullable=False, index=True)
+    session_id = Column(
+        UUID(as_uuid=True), ForeignKey("interview_sessions.id"), nullable=False, index=True
+    )
     question_text = Column(Text, nullable=False)
     answer_text = Column(Text, nullable=True)
     evaluation_score = Column(Float, nullable=True)

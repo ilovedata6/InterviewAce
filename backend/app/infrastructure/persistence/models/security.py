@@ -1,9 +1,10 @@
 """Security ORM models — infrastructure persistence layer."""
 
-from sqlalchemy import Column, String, UUID, ForeignKey, Integer, DateTime, Boolean
-from sqlalchemy.sql import func
 import uuid
 from datetime import datetime
+
+from sqlalchemy import UUID, Boolean, Column, DateTime, ForeignKey, String
+from sqlalchemy.sql import func
 
 from app.infrastructure.persistence.models.base import Base, TimestampMixin
 

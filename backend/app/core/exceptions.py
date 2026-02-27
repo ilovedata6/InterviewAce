@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from app.domain.exceptions import (
     AuthenticationError,
     AuthorizationError,
-    DomainException,
+    DomainError,
     DuplicateEntityError,
     EntityNotFoundError,
     FileValidationError,
@@ -68,6 +68,6 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=503, content={"detail": exc.message, "code": exc.code})
 
     # Catch-all for any other domain exception not explicitly handled
-    @app.exception_handler(DomainException)
-    async def _domain_generic(request: Request, exc: DomainException) -> JSONResponse:
+    @app.exception_handler(DomainError)
+    async def _domain_generic(request: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=500, content={"detail": exc.message, "code": exc.code})

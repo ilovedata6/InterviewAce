@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import json
 import re
-import structlog
-from typing import Any, Dict, List
+from typing import Any
 
+import structlog
 from google import genai
 
-from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.exceptions import LLMProviderError
+from app.domain.interfaces.llm_provider import ILLMProvider
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +47,7 @@ class GeminiProvider(ILLMProvider):
     def provider_name(self) -> str:
         return "Gemini"
 
-    def generate_questions(self, prompts: Dict[str, str]) -> List[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
         """
         Generate interview questions using Gemini.
 
@@ -68,7 +68,7 @@ class GeminiProvider(ILLMProvider):
 
             questions_list = data if isinstance(data, list) else data.get("questions", [])
 
-            question_texts: List[str] = []
+            question_texts: list[str] = []
             for item in questions_list:
                 if isinstance(item, dict) and "question" in item:
                     question_texts.append(item["question"])
@@ -77,9 +77,7 @@ class GeminiProvider(ILLMProvider):
                 else:
                     logger.warning("unexpected_question_item", item=repr(item))
 
-            logger.info(
-                "gemini_questions_generated", count=len(question_texts), model=self._model
-            )
+            logger.info("gemini_questions_generated", count=len(question_texts), model=self._model)
             return question_texts
 
         except json.JSONDecodeError as exc:
@@ -89,7 +87,7 @@ class GeminiProvider(ILLMProvider):
             logger.error("gemini_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"Gemini generate_questions failed: {exc}") from exc
 
-    def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
+    def generate_feedback(self, prompts: dict[str, str]) -> dict[str, Any]:
         """Generate interview feedback/evaluation."""
         try:
             full_prompt = f"{prompts['system_prompt']}\n\n{prompts['user_prompt']}"
@@ -128,7 +126,7 @@ class GeminiProvider(ILLMProvider):
             logger.error("gemini_error", method="generate_completion", error=str(exc))
             raise LLMProviderError(f"Gemini generate_completion failed: {exc}") from exc
 
-    def parse_resume(self, text: str) -> Dict[str, Any]:
+    def parse_resume(self, text: str) -> dict[str, Any]:
         """Parse raw resume text into structured data."""
         prompt = (
             "You are a professional resume parser. Extract structured resume data "

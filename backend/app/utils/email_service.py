@@ -7,9 +7,11 @@ crashes during local development when no mail server is available.
 """
 
 import smtplib
-import structlog
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+import structlog
+
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
@@ -24,15 +26,15 @@ def send_email(to_email: str, subject: str, body: str) -> None:
             to=to_email,
             subject=subject,
         )
-        print(
-            f"\n{'='*60}\n"
+        logger.info(
+            f"\n{'=' * 60}\n"
             f"  DEV EMAIL (not sent)\n"
-            f"{'='*60}\n"
+            f"{'=' * 60}\n"
             f"  To:      {to_email}\n"
             f"  Subject: {subject}\n"
-            f"{'─'*60}\n"
+            f"{'─' * 60}\n"
             f"{body}\n"
-            f"{'='*60}\n"
+            f"{'=' * 60}\n"
         )
         return
 
@@ -53,4 +55,4 @@ def send_email(to_email: str, subject: str, body: str) -> None:
         logger.info("email_sent", to=to_email, subject=subject)
     except Exception as e:
         logger.error("email_send_failed", to=to_email, error=str(e))
-        raise RuntimeError(f"Failed to send email: {e}")
+        raise RuntimeError(f"Failed to send email: {e}") from e

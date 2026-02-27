@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.api.deps import get_current_user, get_change_password_uc
-from app.models.user import User
-from app.schemas.base import Message
-from app.schemas.auth import ChangePasswordRequest
-from app.application.use_cases.auth import ChangePasswordUseCase
+
+from app.api.deps import get_change_password_uc, get_current_user
 from app.application.dto.auth import ChangePasswordInput
+from app.application.use_cases.auth import ChangePasswordUseCase
 from app.domain.exceptions import ValidationError
+from app.models.user import User
+from app.schemas.auth import ChangePasswordRequest
+from app.schemas.base import Message
 
 router = APIRouter()
+
 
 @router.post(
     "/change-password",
@@ -38,5 +40,5 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e.message),
-        )
+        ) from e
     return {"message": msg}

@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
-import uuid, os
+import os
+import uuid
 
 import structlog
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
-from app.schemas.resume import ResumeUploadResponse
-from app.utils.file_handler import save_upload_file, validate_file
 from app.api.deps import get_current_user, get_upload_resume_uc
+from app.application.dto.resume import ResumeUploadInput
+from app.application.use_cases.resume import UploadResumeUseCase
 from app.core.config import settings
 from app.core.middleware import limiter
-from app.schemas.resume import ResumeStatus, FileType
-from app.application.use_cases.resume import UploadResumeUseCase
-from app.application.dto.resume import ResumeUploadInput
+from app.schemas.resume import FileType, ResumeStatus, ResumeUploadResponse
+from app.utils.file_handler import save_upload_file, validate_file
 
 router = APIRouter()
 
@@ -21,6 +21,7 @@ def _dispatch_celery_task(file_path: str, user_id: str, resume_id: str) -> str |
     """Try to dispatch Celery task; return task_id or None if broker unavailable."""
     try:
         from app.infrastructure.tasks.resume_tasks import parse_resume_task
+
         task = parse_resume_task.delay(
             file_path=file_path,
             user_id=user_id,
@@ -38,17 +39,18 @@ def _dispatch_celery_task(file_path: str, user_id: str, resume_id: str) -> str |
 
 async def _sync_parse_fallback(file_path: str, resume_id: str) -> None:
     """Synchronous fallback: parse resume in-process when Celery is unavailable."""
-    from app.infrastructure.llm.factory import get_llm_provider
-    from app.services.resume_parser import _extract_text
-    from app.infrastructure.persistence.models.resume import Resume as ResumeModel
-    from sqlalchemy import select, create_engine
+    from sqlalchemy import create_engine, select
     from sqlalchemy.orm import sessionmaker
+
+    from app.infrastructure.llm.factory import get_llm_provider
+    from app.infrastructure.persistence.models.resume import Resume as ResumeModel
+    from app.services.resume_parser import _extract_text
 
     logger.info("sync_parse_fallback_started", resume_id=resume_id)
 
     engine = create_engine(settings.database_url, pool_pre_ping=True)
-    Session = sessionmaker(bind=engine)
-    db = Session()
+    session_factory = sessionmaker(bind=engine)
+    db = session_factory()
 
     try:
         text = _extract_text(file_path)
@@ -124,7 +126,7 @@ async def upload_resume(
         raise
     except Exception as e:
         logger.exception("validation_error")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     # 2. Save file with unique name
     if not file.filename:
@@ -134,9 +136,9 @@ async def upload_resume(
     upload_path = os.path.join(settings.UPLOAD_DIR, unique_name)
     try:
         save_upload_file(file, upload_path)
-    except Exception as e:
+    except Exception:
         logger.exception("save_upload_failed")
-        raise HTTPException(status_code=500, detail="Could not save file.")
+        raise HTTPException(status_code=500, detail="Could not save file.") from None
 
     # 3. Create placeholder Resume row via use case
     resume = await use_case.execute(

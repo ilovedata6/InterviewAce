@@ -27,21 +27,16 @@ celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
-
     # ── Time / timezone ────────────────────────────────────────────────────
     timezone="UTC",
     enable_utc=True,
-
     # ── Result backend ─────────────────────────────────────────────────────
     result_expires=3600,  # results kept for 1 hour
-
     # ── Reliability ────────────────────────────────────────────────────────
     task_acks_late=True,
     worker_prefetch_multiplier=1,  # one task at a time per worker
-
     # ── Auto-discover tasks in infrastructure.tasks ────────────────────────
     imports=["app.infrastructure.tasks.resume_tasks"],
-
     # ── Beat schedule (periodic cleanup) ───────────────────────────────────
     beat_schedule={
         "prune-expired-blacklist-tokens": {

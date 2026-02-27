@@ -1,18 +1,18 @@
 # app/services/resume_parser.py
 
 import os
-import structlog
-from typing import Dict, Any
+from typing import Any
 
+import docx
+import pdfplumber
+import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-import pdfplumber
-import docx
 
-from app.models.resume import Resume as ResumeModel
-from app.schemas.resume import ResumeStatus, FileType
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.infrastructure.llm.factory import get_llm_provider
+from app.models.resume import Resume as ResumeModel
+from app.schemas.resume import FileType, ResumeStatus
 
 logger = structlog.get_logger(__name__)
 
@@ -61,30 +61,30 @@ def _extract_text(file_path: str) -> str:
         raise ValueError(f"Unsupported extension for parsing: .{ext}")
 
 
-def _validate_mandatory(parsed: Dict[str, Any], fields: tuple):
+def _validate_mandatory(parsed: dict[str, Any], fields: tuple):
     for f in fields:
         val = parsed.get(f)
         if not val:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Mandatory field '{f}' is missing or empty."
+                detail=f"Mandatory field '{f}' is missing or empty.",
             )
 
 
-def _map_to_model(parsed: Dict[str, Any], user_id: int, file_path: str) -> ResumeModel:
-    return  ResumeModel(
-    user_id=user_id,
-    title=parsed.get("name") or os.path.basename(file_path),
-    description=parsed.get("summary"),            # if you generate one
-    file_path=file_path,
-    inferred_role=parsed.get("inferred_role"),
-    file_name=os.path.basename(file_path),
-    file_size=os.path.getsize(file_path),
-    skills=parsed.get("skills", []),
-    file_type=FileType[file_path.rsplit(".",1)[-1].upper()],
-    status=ResumeStatus.ANALYZED,
-    analysis=parsed,                               # your parsed dict
-    years_of_experience=parsed.get("years_of_experience"),
-    confidence_score=parsed.get("confidence_score"),
-    processing_time=parsed.get("processing_time"),
-)
+def _map_to_model(parsed: dict[str, Any], user_id: int, file_path: str) -> ResumeModel:
+    return ResumeModel(
+        user_id=user_id,
+        title=parsed.get("name") or os.path.basename(file_path),
+        description=parsed.get("summary"),  # if you generate one
+        file_path=file_path,
+        inferred_role=parsed.get("inferred_role"),
+        file_name=os.path.basename(file_path),
+        file_size=os.path.getsize(file_path),
+        skills=parsed.get("skills", []),
+        file_type=FileType[file_path.rsplit(".", 1)[-1].upper()],
+        status=ResumeStatus.ANALYZED,
+        analysis=parsed,  # your parsed dict
+        years_of_experience=parsed.get("years_of_experience"),
+        confidence_score=parsed.get("confidence_score"),
+        processing_time=parsed.get("processing_time"),
+    )

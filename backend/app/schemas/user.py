@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
 from datetime import datetime
 from uuid import UUID
+
+from pydantic import BaseModel, EmailStr
 
 from app.domain.value_objects.enums import UserRole
 
@@ -10,11 +10,14 @@ class UserBase(BaseModel):
     name: str
     email: EmailStr
 
+
 class UserCreate(UserBase):
     password: str
 
+
 class UserUpdate(UserBase):
-    password: Optional[str] = None
+    password: str | None = None
+
 
 class UserInDB(UserBase):
     id: UUID
@@ -25,9 +28,11 @@ class UserInDB(UserBase):
     class Config:
         from_attributes = True
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
-    sub: Optional[str] = None 
+    sub: str | None = None

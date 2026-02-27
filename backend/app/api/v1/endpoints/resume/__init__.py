@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from .upload import router as upload_router
+
 from .analysis import router as analysis_router
+from .export import router as export_router
 from .management import router as management_router
 from .sharing import router as sharing_router
-from .export import router as export_router
+from .upload import router as upload_router
 from .version import router as version_router
 
 router = APIRouter()

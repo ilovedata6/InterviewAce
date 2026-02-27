@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends
-from app.schemas.auth import ResendVerificationRequest, VerificationResponse
-from app.application.use_cases.auth import ResendVerificationUseCase
+
 from app.api.deps import get_resend_verification_uc
+from app.application.use_cases.auth import ResendVerificationUseCase
+from app.schemas.auth import ResendVerificationRequest, VerificationResponse
 
 router = APIRouter()
+
 
 @router.post(
     "/resend-verification",

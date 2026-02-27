@@ -6,23 +6,25 @@ All endpoints require ``UserRole.ADMIN``.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, func, case
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
-from app.db.session import get_db
-from app.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.deps import require_role
+from app.db.session import get_db
 from app.domain.value_objects.enums import UserRole
 from app.infrastructure.persistence.models.interview import InterviewSession
 from app.infrastructure.persistence.models.resume import Resume
+from app.models.user import User
 
 router = APIRouter()
 
 
 # ─── Platform stats ────────────────────────────────────────────────────────
+
 
 @router.get(
     "/stats",
@@ -32,16 +34,14 @@ router = APIRouter()
 async def admin_stats(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_role(UserRole.ADMIN)),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return high-level platform statistics — total users, interviews,
     resumes, and conversion metrics."""
 
     user_count = await db.execute(select(func.count(User.id)))
     interview_count = await db.execute(select(func.count(InterviewSession.id)))
     completed_count = await db.execute(
-        select(func.count(InterviewSession.id)).where(
-            InterviewSession.completed_at.isnot(None)
-        )
+        select(func.count(InterviewSession.id)).where(InterviewSession.completed_at.isnot(None))
     )
     resume_count = await db.execute(select(func.count(Resume.id)))
 
@@ -63,6 +63,7 @@ async def admin_stats(
 
 # ─── User listing ──────────────────────────────────────────────────────────
 
+
 @router.get(
     "/users",
     summary="List users (admin only)",
@@ -73,7 +74,7 @@ async def admin_list_users(
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_role(UserRole.ADMIN)),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Paginated list of users with interview/resume counts."""
     total_result = await db.execute(select(func.count(User.id)))
     total = total_result.scalar()
@@ -88,9 +89,7 @@ async def admin_list_users(
         interview_cnt = await db.execute(
             select(func.count(InterviewSession.id)).where(InterviewSession.user_id == u.id)
         )
-        resume_cnt = await db.execute(
-            select(func.count(Resume.id)).where(Resume.user_id == u.id)
-        )
+        resume_cnt = await db.execute(select(func.count(Resume.id)).where(Resume.user_id == u.id))
         items.append(
             {
                 "id": str(u.id),
@@ -110,6 +109,7 @@ async def admin_list_users(
 
 # ─── User detail / management ──────────────────────────────────────────────
 
+
 @router.get(
     "/users/{user_id}",
     summary="Get user detail (admin only)",
@@ -118,7 +118,7 @@ async def admin_get_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_role(UserRole.ADMIN)),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return detailed information about a specific user."""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
@@ -146,7 +146,7 @@ async def admin_deactivate_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_role(UserRole.ADMIN)),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Deactivate a user account — sets ``is_active = False``."""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
@@ -166,7 +166,7 @@ async def admin_activate_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_role(UserRole.ADMIN)),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Reactivate a previously deactivated user account."""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()

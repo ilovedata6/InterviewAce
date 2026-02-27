@@ -5,16 +5,16 @@ Revises: a1b2c3d4e5f6
 Create Date: 2026-02-26 00:00:00.000000
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "b2c3d4e5f6a7"
-down_revision: Union[str, None] = "a1b2c3d4e5f6"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "a1b2c3d4e5f6"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # Tables/columns to migrate to TIMESTAMP WITH TIME ZONE.
 # Each tuple: (table, column)
@@ -31,11 +31,11 @@ _TIMESTAMP_COLUMNS = [
     ("users", "updated_at"),
     ("resumes", "created_at"),
     ("resumes", "updated_at"),
-    ("user_sessions", "updated_at"),           # created_at already WITH TIME ZONE
-    ("password_history", "updated_at"),        # created_at already WITH TIME ZONE
-    ("password_reset_tokens", "created_at"),   # no updated_at column
-    ("login_attempts", "updated_at"),          # created_at already WITH TIME ZONE
-    ("token_blacklist", "updated_at"),         # created_at already WITH TIME ZONE
+    ("user_sessions", "updated_at"),  # created_at already WITH TIME ZONE
+    ("password_history", "updated_at"),  # created_at already WITH TIME ZONE
+    ("password_reset_tokens", "created_at"),  # no updated_at column
+    ("login_attempts", "updated_at"),  # created_at already WITH TIME ZONE
+    ("token_blacklist", "updated_at"),  # created_at already WITH TIME ZONE
 ]
 
 

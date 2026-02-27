@@ -4,15 +4,15 @@ AI Analyzer service — background re-analysis of a resume via the LLM provider.
 
 from __future__ import annotations
 
-import structlog
 from uuid import UUID
 
+import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.value_objects.enums import ResumeStatus
 from app.infrastructure.llm.factory import get_llm_provider
 from app.models.resume import Resume
-from app.domain.value_objects.enums import ResumeStatus
 
 logger = structlog.get_logger(__name__)
 
@@ -44,6 +44,8 @@ async def analyze_resume_content(resume_id: UUID, db: AsyncSession) -> None:
         logger.info("resume_reanalysis_completed", resume_id=str(resume_id))
 
     except Exception as exc:
-        logger.error("resume_reanalysis_failed", resume_id=str(resume_id), error=str(exc), exc_info=True)
+        logger.error(
+            "resume_reanalysis_failed", resume_id=str(resume_id), error=str(exc), exc_info=True
+        )
         resume.status = ResumeStatus.ERROR
         await db.commit()

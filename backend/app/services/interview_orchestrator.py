@@ -1,20 +1,21 @@
-import structlog
-from typing import List, cast
+from datetime import UTC, datetime
+from typing import cast
 from uuid import UUID
+
+import structlog
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.interview import InterviewSession, InterviewQuestion
-from app.schemas.interview import InterviewQuestionCreate, SummaryOut, QuestionFeedback
-from app.db.session import get_db
-from app.core.config import settings
+
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.infrastructure.llm.factory import get_llm_provider
+from app.models.interview import InterviewQuestion, InterviewSession
 from app.models.resume import Resume
 from app.models.user import User
-from fastapi import HTTPException, status
-from datetime import datetime, timezone
+from app.schemas.interview import InterviewQuestionCreate, QuestionFeedback, SummaryOut
 
 logger = structlog.get_logger(__name__)
+
 
 class InterviewOrchestrator:
     def __init__(self, db: AsyncSession, llm_provider: ILLMProvider | None = None):
@@ -30,9 +31,7 @@ class InterviewOrchestrator:
         # Extract relevant context
         experience = resume.analysis.get("experience", [])
         projects = [
-            {
-                "description": exp.get("description", "No description available")
-            }
+            {"description": exp.get("description", "No description available")}
             for exp in experience
         ]
 
@@ -40,10 +39,12 @@ class InterviewOrchestrator:
             "inferred_role": resume.inferred_role,
             "years_of_experience": resume.years_of_experience,
             "skills": resume.skills,
-            "projects": projects
+            "projects": projects,
         }
 
-    def generate_questions(self, session: InterviewSession, resume_context: dict) -> List[InterviewQuestionCreate]:
+    def generate_questions(
+        self, session: InterviewSession, resume_context: dict
+    ) -> list[InterviewQuestionCreate]:
         try:
             logger.info("generating_questions", session_id=str(session.id))
             prompt = self._build_prompt(resume_context)
@@ -65,47 +66,48 @@ class InterviewOrchestrator:
         project_details = "\n".join(
             [f"Projects: {p['description']}" for i, p in enumerate(projects)]
         )
-        
+
         system_prompt = (
-                "You are an expert technical interviewer. "
-                "Your job is to generate a list of high-quality, on-point interview questions "
-                "that test a candidate's skills, professional experience, and past projects. "
-                "Always respond with valid JSON only."
-)
-        
+            "You are an expert technical interviewer. "
+            "Your job is to generate a list of high-quality, on-point interview questions "
+            "that test a candidate's skills, professional experience, and past projects. "
+            "Always respond with valid JSON only."
+        )
+
         user_prompt = (
-                    f"Candidate Profile:\n"
-                    f"- Role: {inferred_role}\n"
-                    f"- Years of Experience: {years_of_experience}\n"
-                    f"- Skills: {', '.join(skills)}\n"
-                    f"- Projects:\n{project_details}\n\n"
-                    "OUTPUT FORMAT:\n"
-                    "- Return a JSON array of objects, each with:\n"
-                    "    { \"type\": \"technical|behavioral|project\", \"question\": string }\n"
-                    "- Total questions: 12–15\n"
-                    "- Counts: 5 technical, 3 behavioral, 5–4 project\n"
-                    "- No additional text, no markdown, no code fences.\n\n"
-                    "Now generate the questions."
-)
+            f"Candidate Profile:\n"
+            f"- Role: {inferred_role}\n"
+            f"- Years of Experience: {years_of_experience}\n"
+            f"- Skills: {', '.join(skills)}\n"
+            f"- Projects:\n{project_details}\n\n"
+            "OUTPUT FORMAT:\n"
+            "- Return a JSON array of objects, each with:\n"
+            '    { "type": "technical|behavioral|project", "question": string }\n'
+            "- Total questions: 12–15\n"
+            "- Counts: 5 technical, 3 behavioral, 5–4 project\n"
+            "- No additional text, no markdown, no code fences.\n\n"
+            "Now generate the questions."
+        )
 
-        return {
-            'system_prompt': system_prompt,
-            'user_prompt': user_prompt
-        }
+        return {"system_prompt": system_prompt, "user_prompt": user_prompt}
 
-    def _map_questions_to_schema(self, session_id: UUID, questions: List[str]) -> List[InterviewQuestionCreate]:
+    def _map_questions_to_schema(
+        self, session_id: UUID, questions: list[str]
+    ) -> list[InterviewQuestionCreate]:
         return [InterviewQuestionCreate(session_id=session_id, question_text=q) for q in questions]
 
-    async def persist_questions(self, session: InterviewSession, questions: List[InterviewQuestionCreate]):
+    async def persist_questions(
+        self, session: InterviewSession, questions: list[InterviewQuestionCreate]
+    ):
         logger.info("persisting_questions", session_id=str(session.id), count=len(questions))
         for question_schema in questions:
             question = InterviewQuestion(
-                session_id=question_schema.session_id,
-                question_text=question_schema.question_text
+                session_id=question_schema.session_id, question_text=question_schema.question_text
             )
             self.db.add(question)
         await self.db.commit()
         logger.info("questions_persisted", session_id=str(session.id))
+
 
 async def get_user_session(db: AsyncSession, user: User, session_id: UUID):
     result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
@@ -116,19 +118,22 @@ async def get_user_session(db: AsyncSession, user: User, session_id: UUID):
         return None
     return session
 
+
 async def get_next_question(db: AsyncSession, session: InterviewSession):
     result = await db.execute(
         select(InterviewQuestion)
-        .where(InterviewQuestion.session_id == session.id, InterviewQuestion.answer_text == None)
+        .where(InterviewQuestion.session_id == session.id, InterviewQuestion.answer_text.is_(None))
         .order_by(InterviewQuestion.created_at)
     )
     return result.scalars().first()
 
-async def submit_answer(db: AsyncSession, session: InterviewSession, question_id: UUID, answer_text: str):
+
+async def submit_answer(
+    db: AsyncSession, session: InterviewSession, question_id: UUID, answer_text: str
+):
     result = await db.execute(
         select(InterviewQuestion).where(
-            InterviewQuestion.id == question_id,
-            InterviewQuestion.session_id == session.id
+            InterviewQuestion.id == question_id, InterviewQuestion.session_id == session.id
         )
     )
     question = result.scalars().first()
@@ -138,6 +143,7 @@ async def submit_answer(db: AsyncSession, session: InterviewSession, question_id
     await db.commit()
     next_question = await get_next_question(db, session)
     return next_question
+
 
 async def complete_interview_session(db: AsyncSession, session: InterviewSession):
     # Fetch all questions for the session
@@ -149,15 +155,14 @@ async def complete_interview_session(db: AsyncSession, session: InterviewSession
         raise HTTPException(status_code=400, detail="No questions found for this session.")
     unanswered = [q for q in questions if q.answer_text is None]
     if unanswered:
-        raise HTTPException(status_code=400, detail="All questions must be answered before completing the interview.")
+        raise HTTPException(
+            status_code=400,
+            detail="All questions must be answered before completing the interview.",
+        )
 
     # Build LLM prompt
     qa_pairs = [
-        {
-            "question_id": str(q.id),
-            "question": q.question_text,
-            "answer": q.answer_text
-        }
+        {"question_id": str(q.id), "question": q.question_text, "answer": q.answer_text}
         for q in questions
     ]
     prompt = {
@@ -180,7 +185,7 @@ async def complete_interview_session(db: AsyncSession, session: InterviewSession
     try:
         llm_response = llm_provider.generate_feedback(prompt)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM evaluation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"LLM evaluation failed: {e}") from e
 
     # Parse and persist feedback
     summary = llm_response.get("summary")
@@ -190,7 +195,7 @@ async def complete_interview_session(db: AsyncSession, session: InterviewSession
         raise HTTPException(status_code=500, detail="LLM response missing required fields.")
 
     # Update session
-    session.completed_at = datetime.now(timezone.utc)  # type: ignore
+    session.completed_at = datetime.now(UTC)  # type: ignore
     session.final_score = confidence_score
     session.feedback_summary = summary
     await db.commit()
@@ -206,17 +211,19 @@ async def complete_interview_session(db: AsyncSession, session: InterviewSession
 
     # Build response
     return SummaryOut(
-        session_id=session.id,  #type:ignore
+        session_id=session.id,  # type:ignore
         final_score=confidence_score,
         feedback_summary=summary,
         question_feedback=[
             QuestionFeedback(
                 question_id=UUID(qf["question_id"]),
                 evaluation_score=qf["evaluation_score"],
-                feedback_comment=qf["feedback_comment"]
-            ) for qf in questions_feedback
-        ]
+                feedback_comment=qf["feedback_comment"],
+            )
+            for qf in questions_feedback
+        ],
     )
+
 
 async def get_interview_summary(db: AsyncSession, session):
     # Fetch all questions for the session
@@ -234,7 +241,7 @@ async def get_interview_summary(db: AsyncSession, session):
             "question": q.question_text,
             "answer": q.answer_text,
             "evaluation_score": q.evaluation_score,
-            "feedback_comment": q.feedback_comment
+            "feedback_comment": q.feedback_comment,
         }
         for q in questions
     ]

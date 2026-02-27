@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
 from app.api.deps import get_current_user, get_submit_answer_uc
+from app.application.dto.interview import SubmitAnswerInput
+from app.application.use_cases.interview import SubmitAnswerUseCase
+from app.domain.exceptions import EntityNotFoundError
 from app.models.user import User
 from app.schemas.interview import AnswerIn, QuestionOut
-from app.application.use_cases.interview import SubmitAnswerUseCase
-from app.application.dto.interview import SubmitAnswerInput
-from app.domain.exceptions import EntityNotFoundError
 
 router = APIRouter()
+
 
 @router.post(
     "/{session_id}/{question_id}/answer",
@@ -43,8 +46,8 @@ async def answer_question(
                 time_taken_seconds=answer_in.time_taken_seconds,
             )
         )
-    except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Session not found or not owned by user")
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Session not found or not owned by user") from e
     if not result:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     return QuestionOut(

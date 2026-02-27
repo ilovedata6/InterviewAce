@@ -8,8 +8,8 @@ the LLM provider interface, and domain entities.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 
@@ -26,7 +26,6 @@ from app.domain.entities.interview import (
 from app.domain.exceptions import (
     EntityNotFoundError,
     InterviewError,
-    AuthorizationError,
 )
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.interfaces.repositories import (
@@ -39,6 +38,7 @@ logger = structlog.get_logger(__name__)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
+
 
 async def _get_owned_session(
     repo: IInterviewRepository,
@@ -53,6 +53,7 @@ async def _get_owned_session(
 
 
 # ── Start Interview ─────────────────────────────────────────────────────────
+
 
 class StartInterviewUseCase:
     """Create a new interview session and generate AI questions."""
@@ -82,7 +83,7 @@ class StartInterviewUseCase:
         session_entity = InterviewSessionEntity(
             user_id=dto.user_id,
             resume_id=resume.id,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             difficulty=dto.difficulty,
             question_count=dto.question_count,
             focus_areas=dto.focus_areas,
@@ -106,7 +107,7 @@ class StartInterviewUseCase:
             )
         except Exception as e:
             logger.error("llm_call_failed", session_id=str(saved_session.id), error=str(e))
-            raise InterviewError("Failed to generate questions")
+            raise InterviewError("Failed to generate questions") from e
 
         # 4. Persist questions with metadata
         for idx, q_data in enumerate(raw_questions):
@@ -114,7 +115,9 @@ class StartInterviewUseCase:
             if isinstance(q_data, dict):
                 q_text = q_data.get("question", str(q_data))
                 q_category = q_data.get("type", "general")
-                q_difficulty = q_data.get("difficulty", dto.difficulty if dto.difficulty != "mixed" else "medium")
+                q_difficulty = q_data.get(
+                    "difficulty", dto.difficulty if dto.difficulty != "mixed" else "medium"
+                )
             else:
                 q_text = str(q_data)
                 q_category = "general"
@@ -154,25 +157,23 @@ class StartInterviewUseCase:
         *,
         question_count: int = 12,
         difficulty: str = "mixed",
-        focus_areas: Optional[List[str]] = None,
+        focus_areas: list[str] | None = None,
     ) -> dict:
         skills = ctx.get("skills") or []
         if not isinstance(skills, list):
             skills = []
         projects = (ctx.get("projects") or [])[:4]
-        project_details = "\n".join(
-            f"Projects: {p['description']}" for p in projects
-        )
+        project_details = "\n".join(f"Projects: {p['description']}" for p in projects)
 
         difficulty_instruction = ""
         if difficulty != "mixed":
-            difficulty_instruction = f"All questions should be at **{difficulty}** difficulty level.\n"
+            difficulty_instruction = (
+                f"All questions should be at **{difficulty}** difficulty level.\n"
+            )
 
         focus_instruction = ""
         if focus_areas:
-            focus_instruction = (
-                f"Focus the questions on these areas: {', '.join(focus_areas)}.\n"
-            )
+            focus_instruction = f"Focus the questions on these areas: {', '.join(focus_areas)}.\n"
 
         system_prompt = (
             "You are an expert technical interviewer. "
@@ -201,21 +202,18 @@ class StartInterviewUseCase:
 
 # ── Submit Answer ───────────────────────────────────────────────────────────
 
+
 class SubmitAnswerUseCase:
     """Submit an answer and return the next unanswered question (or None)."""
 
     def __init__(self, interview_repo: IInterviewRepository) -> None:
         self._interview_repo = interview_repo
 
-    async def execute(self, dto: SubmitAnswerInput) -> Optional[QuestionResult]:
-        session = await _get_owned_session(
-            self._interview_repo, dto.user_id, dto.session_id
-        )
+    async def execute(self, dto: SubmitAnswerInput) -> QuestionResult | None:
+        _session = await _get_owned_session(self._interview_repo, dto.user_id, dto.session_id)
 
         # Find the question
-        question = await self._interview_repo.get_question_by_id(
-            dto.question_id, dto.session_id
-        )
+        question = await self._interview_repo.get_question_by_id(dto.question_id, dto.session_id)
         if not question:
             raise EntityNotFoundError("InterviewQuestion", str(dto.question_id))
 
@@ -240,15 +238,14 @@ class SubmitAnswerUseCase:
 
 # ── Get Next Question ───────────────────────────────────────────────────────
 
+
 class GetNextQuestionUseCase:
     """Get the next unanswered question for a session."""
 
     def __init__(self, interview_repo: IInterviewRepository) -> None:
         self._interview_repo = interview_repo
 
-    async def execute(
-        self, user_id: uuid.UUID, session_id: uuid.UUID
-    ) -> Optional[QuestionResult]:
+    async def execute(self, user_id: uuid.UUID, session_id: uuid.UUID) -> QuestionResult | None:
         await _get_owned_session(self._interview_repo, user_id, session_id)
 
         next_q = await self._interview_repo.get_next_unanswered_question(session_id)
@@ -265,6 +262,7 @@ class GetNextQuestionUseCase:
 
 # ── Complete Interview ──────────────────────────────────────────────────────
 
+
 class CompleteInterviewUseCase:
     """Evaluate all answers and finalize the interview session."""
 
@@ -276,12 +274,8 @@ class CompleteInterviewUseCase:
         self._interview_repo = interview_repo
         self._llm_provider = llm_provider
 
-    async def execute(
-        self, user_id: uuid.UUID, session_id: uuid.UUID
-    ) -> InterviewSummaryResult:
-        session = await _get_owned_session(
-            self._interview_repo, user_id, session_id
-        )
+    async def execute(self, user_id: uuid.UUID, session_id: uuid.UUID) -> InterviewSummaryResult:
+        session = await _get_owned_session(self._interview_repo, user_id, session_id)
 
         questions = await self._interview_repo.get_questions_by_session_id(session_id)
         if not questions:
@@ -289,9 +283,7 @@ class CompleteInterviewUseCase:
 
         unanswered = [q for q in questions if not q.is_answered()]
         if unanswered:
-            raise InterviewError(
-                "All questions must be answered before completing the interview."
-            )
+            raise InterviewError("All questions must be answered before completing the interview.")
 
         # Build LLM prompt
         qa_pairs = [
@@ -326,7 +318,7 @@ class CompleteInterviewUseCase:
         try:
             llm_response = self._llm_provider.generate_feedback(prompt)
         except Exception as e:
-            raise InterviewError(f"LLM evaluation failed: {e}")
+            raise InterviewError(f"LLM evaluation failed: {e}") from e
 
         summary = llm_response.get("summary")
         confidence_score = llm_response.get("confidence_score")
@@ -364,19 +356,19 @@ class CompleteInterviewUseCase:
 
 # ── Get Session ─────────────────────────────────────────────────────────────
 
+
 class GetSessionUseCase:
     """Retrieve a specific interview session for the user."""
 
     def __init__(self, interview_repo: IInterviewRepository) -> None:
         self._interview_repo = interview_repo
 
-    async def execute(
-        self, user_id: uuid.UUID, session_id: uuid.UUID
-    ) -> InterviewSessionEntity:
+    async def execute(self, user_id: uuid.UUID, session_id: uuid.UUID) -> InterviewSessionEntity:
         return await _get_owned_session(self._interview_repo, user_id, session_id)
 
 
 # ── Get History ─────────────────────────────────────────────────────────────
+
 
 class GetHistoryUseCase:
     """List interview sessions with pagination."""
@@ -389,7 +381,7 @@ class GetHistoryUseCase:
         user_id: uuid.UUID,
         skip: int = 0,
         limit: int = 10,
-    ) -> Tuple[List[InterviewSessionEntity], int]:
+    ) -> tuple[list[InterviewSessionEntity], int]:
         sessions = await self._interview_repo.get_sessions_by_user_id(
             user_id, skip=skip, limit=limit
         )
@@ -398,6 +390,7 @@ class GetHistoryUseCase:
 
 
 # ── Get Summary ─────────────────────────────────────────────────────────────
+
 
 class GetSummaryUseCase:
     """Retrieve the detailed summary for a completed interview."""
@@ -410,12 +403,8 @@ class GetSummaryUseCase:
         self._interview_repo = interview_repo
         self._user_repo = user_repo
 
-    async def execute(
-        self, user_id: uuid.UUID, session_id: uuid.UUID
-    ) -> Dict[str, Any]:
-        session = await _get_owned_session(
-            self._interview_repo, user_id, session_id
-        )
+    async def execute(self, user_id: uuid.UUID, session_id: uuid.UUID) -> dict[str, Any]:
+        session = await _get_owned_session(self._interview_repo, user_id, session_id)
 
         questions = await self._interview_repo.get_questions_by_session_id(session_id)
         if not questions:
@@ -436,7 +425,7 @@ class GetSummaryUseCase:
         user = await self._user_repo.get_by_id(user_id)
         user_full_name = user.full_name if user else None
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "session_id": str(session.id),
             "user_full_name": user_full_name,
             "resume_id": str(session.resume_id),

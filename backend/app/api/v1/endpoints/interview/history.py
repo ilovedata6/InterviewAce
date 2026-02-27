@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, Query
+
 from app.api.deps import get_current_user, get_history_uc
-from app.models.user import User
-from app.schemas.interview import InterviewSessionInDB
-from app.schemas.base import PaginatedResponse
 from app.application.use_cases.interview import GetHistoryUseCase
+from app.models.user import User
+from app.schemas.base import PaginatedResponse
+from app.schemas.interview import InterviewSessionInDB
 
 router = APIRouter()
+
 
 @router.get(
     "/history",

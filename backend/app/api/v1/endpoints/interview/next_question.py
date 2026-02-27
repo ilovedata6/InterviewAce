@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
 from app.api.deps import get_current_user, get_next_question_uc
-from app.models.user import User
-from app.schemas.interview import QuestionOut
 from app.application.use_cases.interview import GetNextQuestionUseCase
 from app.domain.exceptions import EntityNotFoundError
+from app.models.user import User
+from app.schemas.interview import QuestionOut
 
 router = APIRouter()
+
 
 @router.get(
     "/{session_id}/next",
@@ -29,8 +32,8 @@ async def get_next_question_route(
     """
     try:
         result = await use_case.execute(current_user.id, session_id)
-    except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Session not found or not owned by user")
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Session not found or not owned by user") from e
     if not result:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     return QuestionOut(question_id=result.question_id, question_text=result.question_text)

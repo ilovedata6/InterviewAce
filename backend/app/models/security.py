@@ -6,10 +6,10 @@ Canonical location: app.infrastructure.persistence.models.security
 
 from app.infrastructure.persistence.models.security import (  # noqa: F401
     LoginAttempt,
-    TokenBlacklist,
-    UserSession,
     PasswordHistory,
     PasswordResetToken,
+    TokenBlacklist,
+    UserSession,
 )
 
 __all__ = [

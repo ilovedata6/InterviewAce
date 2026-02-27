@@ -7,7 +7,6 @@ Translates between the User ORM model and the UserEntity domain object.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,12 +54,12 @@ class UserRepository(IUserRepository):
     # Interface methods
     # ------------------------------------------------------------------
 
-    async def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
+    async def get_by_id(self, user_id: uuid.UUID) -> UserEntity | None:
         result = await self._db.execute(select(User).where(User.id == user_id))
         model = result.scalars().first()
         return self._to_entity(model) if model else None
 
-    async def get_by_email(self, email: str) -> Optional[UserEntity]:
+    async def get_by_email(self, email: str) -> UserEntity | None:
         result = await self._db.execute(select(User).where(User.email == email))
         model = result.scalars().first()
         return self._to_entity(model) if model else None

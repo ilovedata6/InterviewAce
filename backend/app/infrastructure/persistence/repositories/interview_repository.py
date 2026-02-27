@@ -8,17 +8,16 @@ domain entities.
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.domain.entities.interview import InterviewSessionEntity, InterviewQuestionEntity
+from app.domain.entities.interview import InterviewQuestionEntity, InterviewSessionEntity
 from app.domain.interfaces.repositories import IInterviewRepository
 from app.infrastructure.persistence.models.interview import (
-    InterviewSession,
     InterviewQuestion,
+    InterviewSession,
 )
 
 
@@ -33,13 +32,14 @@ class InterviewRepository(IInterviewRepository):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _session_to_entity(model: InterviewSession, *, include_questions: bool = True) -> InterviewSessionEntity:
+    def _session_to_entity(
+        model: InterviewSession, *, include_questions: bool = True
+    ) -> InterviewSessionEntity:
         questions = []
         if include_questions:
             try:
                 questions = [
-                    InterviewRepository._question_to_entity(q)
-                    for q in (model.questions or [])
+                    InterviewRepository._question_to_entity(q) for q in (model.questions or [])
                 ]
             except Exception:
                 questions = []
@@ -116,7 +116,7 @@ class InterviewRepository(IInterviewRepository):
     # Interface methods — Session
     # ------------------------------------------------------------------
 
-    async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
+    async def get_session_by_id(self, session_id: uuid.UUID) -> InterviewSessionEntity | None:
         result = await self._db.execute(
             select(InterviewSession)
             .options(selectinload(InterviewSession.questions))
@@ -131,7 +131,7 @@ class InterviewRepository(IInterviewRepository):
         *,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[InterviewSessionEntity]:
+    ) -> list[InterviewSessionEntity]:
         result = await self._db.execute(
             select(InterviewSession)
             .where(InterviewSession.user_id == user_id)
@@ -192,7 +192,7 @@ class InterviewRepository(IInterviewRepository):
 
     async def get_questions_by_session_id(
         self, session_id: uuid.UUID
-    ) -> List[InterviewQuestionEntity]:
+    ) -> list[InterviewQuestionEntity]:
         result = await self._db.execute(
             select(InterviewQuestion)
             .where(InterviewQuestion.session_id == session_id)
@@ -211,12 +211,12 @@ class InterviewRepository(IInterviewRepository):
 
     async def get_next_unanswered_question(
         self, session_id: uuid.UUID
-    ) -> Optional[InterviewQuestionEntity]:
+    ) -> InterviewQuestionEntity | None:
         result = await self._db.execute(
             select(InterviewQuestion)
             .where(
                 InterviewQuestion.session_id == session_id,
-                InterviewQuestion.answer_text == None,
+                InterviewQuestion.answer_text.is_(None),
             )
             .order_by(InterviewQuestion.created_at)
         )
@@ -225,7 +225,7 @@ class InterviewRepository(IInterviewRepository):
 
     async def get_question_by_id(
         self, question_id: uuid.UUID, session_id: uuid.UUID
-    ) -> Optional[InterviewQuestionEntity]:
+    ) -> InterviewQuestionEntity | None:
         result = await self._db.execute(
             select(InterviewQuestion).where(
                 InterviewQuestion.id == question_id,

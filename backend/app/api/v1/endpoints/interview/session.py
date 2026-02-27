@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.api.deps import get_current_user, get_session_uc
-from app.models.user import User
-from app.schemas.interview import InterviewSessionInDB
 from app.application.use_cases.interview import GetSessionUseCase
 from app.domain.exceptions import EntityNotFoundError
+from app.models.user import User
+from app.schemas.interview import InterviewSessionInDB
 
 router = APIRouter()
+
 
 @router.get(
     "/{session_id}",
@@ -26,6 +29,6 @@ async def get_interview_session(
     """
     try:
         session = await use_case.execute(current_user.id, session_id)
-    except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Interview session not found")
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Interview session not found") from e
     return session

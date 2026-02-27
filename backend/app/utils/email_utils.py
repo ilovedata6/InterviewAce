@@ -1,6 +1,7 @@
 from app.core.config import settings
 from app.utils.email_service import send_email
 
+
 def send_verification_email(to_email: str, token: str):
     verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
     subject = "Verify Your Interview Ace Email"

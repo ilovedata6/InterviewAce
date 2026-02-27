@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.deps import get_current_user, get_logout_uc
+from app.application.use_cases.auth import LogoutUseCase
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.base import Message
-from app.application.use_cases.auth import LogoutUseCase
 
 router = APIRouter()
+
 
 @router.post(
     "/logout",
@@ -28,8 +30,7 @@ async def logout(
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header"
         )
     token = auth_header.split(" ")[1]
     session_id = request.headers.get("X-Session-ID")

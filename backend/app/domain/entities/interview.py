@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
@@ -15,15 +15,15 @@ class InterviewQuestionEntity:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     session_id: uuid.UUID = field(default_factory=uuid.uuid4)
     question_text: str = ""
-    answer_text: Optional[str] = None
-    evaluation_score: Optional[float] = None
-    feedback_comment: Optional[str] = None
+    answer_text: str | None = None
+    evaluation_score: float | None = None
+    feedback_comment: str | None = None
     category: str = "general"
     difficulty: str = "medium"
-    time_taken_seconds: Optional[int] = None
+    time_taken_seconds: int | None = None
     order_index: int = 0
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def is_answered(self) -> bool:
         return self.answer_text is not None
@@ -39,24 +39,25 @@ class InterviewSessionEntity:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     user_id: uuid.UUID = field(default_factory=uuid.uuid4)
     resume_id: uuid.UUID = field(default_factory=uuid.uuid4)
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    final_score: Optional[float] = None
-    feedback_summary: Optional[str] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    final_score: float | None = None
+    feedback_summary: str | None = None
     difficulty: str = "mixed"
     question_count: int = 12
-    focus_areas: Optional[List[str]] = None
-    score_breakdown: Optional[Dict[str, Any]] = None
-    questions: List[InterviewQuestionEntity] = field(default_factory=list)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    focus_areas: list[str] | None = None
+    score_breakdown: dict[str, Any] | None = None
+    questions: list[InterviewQuestionEntity] = field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def is_completed(self) -> bool:
         return self.completed_at is not None
 
-    def complete(self, score: float, summary: str, score_breakdown: Optional[Dict[str, Any]] = None) -> None:
-        from datetime import timezone
-        self.completed_at = datetime.now(timezone.utc)
+    def complete(
+        self, score: float, summary: str, score_breakdown: dict[str, Any] | None = None
+    ) -> None:
+        self.completed_at = datetime.now(UTC)
         self.final_score = score
         self.feedback_summary = summary
         if score_breakdown:

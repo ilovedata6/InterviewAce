@@ -6,16 +6,16 @@ Import them from here or via the backward-compatible ``app.models`` package.
 """
 
 from app.infrastructure.persistence.models.base import Base, TimestampMixin
-from app.infrastructure.persistence.models.user import User
+from app.infrastructure.persistence.models.interview import InterviewQuestion, InterviewSession
 from app.infrastructure.persistence.models.resume import Resume
-from app.infrastructure.persistence.models.interview import InterviewSession, InterviewQuestion
 from app.infrastructure.persistence.models.security import (
     LoginAttempt,
-    TokenBlacklist,
-    UserSession,
     PasswordHistory,
     PasswordResetToken,
+    TokenBlacklist,
+    UserSession,
 )
+from app.infrastructure.persistence.models.user import User
 
 __all__ = [
     "Base",

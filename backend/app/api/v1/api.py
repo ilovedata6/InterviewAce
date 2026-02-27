@@ -1,9 +1,9 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import interview, resume
-from app.api.v1.endpoints import auth
-from app.api.v1.endpoints.tasks import router as tasks_router
-from app.api.v1.endpoints.dashboard import router as dashboard_router
+
+from app.api.v1.endpoints import auth, interview, resume
 from app.api.v1.endpoints.admin import router as admin_router
+from app.api.v1.endpoints.dashboard import router as dashboard_router
+from app.api.v1.endpoints.tasks import router as tasks_router
 
 api_router = APIRouter()
 

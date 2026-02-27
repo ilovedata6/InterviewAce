@@ -67,8 +67,9 @@ async def ready() -> dict:
 
     # ── Celery / broker connectivity (informational) ────────────────────
     try:
-        from app.core.config import settings
         import redis as sync_redis
+
+        from app.core.config import settings
 
         r_sync = sync_redis.from_url(settings.REDIS_URL, socket_connect_timeout=2)
         r_sync.ping()
@@ -82,7 +83,7 @@ async def ready() -> dict:
     try:
         from app.infrastructure.llm.factory import get_llm_provider
 
-        provider = get_llm_provider()
+        get_llm_provider()  # verify provider is available
         checks["llm_provider"] = "ok"
     except Exception as exc:
         logger.warning("readiness_llm_check_failed", error=str(exc))

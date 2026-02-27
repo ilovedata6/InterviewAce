@@ -8,19 +8,18 @@ password reset tokens, and password history.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, func, update as sa_update
+from sqlalchemy import func, select
+from sqlalchemy import update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.repositories import IAuthRepository
 from app.infrastructure.persistence.models.security import (
     LoginAttempt,
+    PasswordResetToken,
     TokenBlacklist,
     UserSession,
-    PasswordHistory,
-    PasswordResetToken,
 )
 
 
@@ -43,8 +42,8 @@ class AuthRepository(IAuthRepository):
             .where(
                 LoginAttempt.user_id == user_id,
                 LoginAttempt.ip_address == ip_address,
-                LoginAttempt.created_at > datetime.now(timezone.utc) - timedelta(minutes=window_minutes),
-                LoginAttempt.success == False,
+                LoginAttempt.created_at > datetime.now(UTC) - timedelta(minutes=window_minutes),
+                LoginAttempt.success.is_(False),
             )
         )
         return result.scalar_one()
@@ -52,7 +51,7 @@ class AuthRepository(IAuthRepository):
     async def lock_login_attempts(
         self, user_id: uuid.UUID, ip_address: str, lock_duration_minutes: int = 5
     ) -> None:
-        lock_until = datetime.now(timezone.utc) + timedelta(minutes=lock_duration_minutes)
+        lock_until = datetime.now(UTC) + timedelta(minutes=lock_duration_minutes)
         await self._db.execute(
             sa_update(LoginAttempt)
             .where(
@@ -84,7 +83,7 @@ class AuthRepository(IAuthRepository):
             .select_from(UserSession)
             .where(
                 UserSession.user_id == user_id,
-                UserSession.is_active == True,
+                UserSession.is_active.is_(True),
             )
         )
         return result.scalar_one()
@@ -94,18 +93,18 @@ class AuthRepository(IAuthRepository):
             select(UserSession)
             .where(
                 UserSession.user_id == user_id,
-                UserSession.is_active == True,
+                UserSession.is_active.is_(True),
             )
             .order_by(UserSession.last_activity)
             .limit(1)
         )
         oldest = result.scalars().first()
         if oldest:
-            setattr(oldest, "is_active", False)
+            oldest.is_active = False
             await self._db.commit()
 
     async def create_session(
-        self, user_id: uuid.UUID, ip_address: str, user_agent: Optional[str]
+        self, user_id: uuid.UUID, ip_address: str, user_agent: str | None
     ) -> str:
         session_id = str(uuid.uuid4())
         session = UserSession(
@@ -124,13 +123,13 @@ class AuthRepository(IAuthRepository):
         result = await self._db.execute(
             select(UserSession).where(
                 UserSession.session_id == session_id,
-                UserSession.is_active == True,
+                UserSession.is_active.is_(True),
             )
         )
         session = result.scalars().first()
         if session:
-            setattr(session, "is_active", False)
-            session.deactivated_at = datetime.now(timezone.utc)
+            session.is_active = False
+            session.deactivated_at = datetime.now(UTC)
             await self._db.commit()
 
     # ------------------------------------------------------------------
@@ -139,7 +138,7 @@ class AuthRepository(IAuthRepository):
 
     async def create_password_reset_token(self, user_id: uuid.UUID) -> str:
         reset_token = str(uuid.uuid4())
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expires_at = datetime.now(UTC) + timedelta(minutes=15)
         db_token = PasswordResetToken(
             token=reset_token,
             user_id=user_id,
@@ -149,12 +148,12 @@ class AuthRepository(IAuthRepository):
         await self._db.commit()
         return reset_token
 
-    async def verify_and_consume_reset_token(self, token: str) -> Optional[uuid.UUID]:
+    async def verify_and_consume_reset_token(self, token: str) -> uuid.UUID | None:
         result = await self._db.execute(
             select(PasswordResetToken).where(
                 PasswordResetToken.token == token,
-                PasswordResetToken.expires_at >= datetime.now(timezone.utc),
-                PasswordResetToken.used == False,
+                PasswordResetToken.expires_at >= datetime.now(UTC),
+                PasswordResetToken.used.is_(False),
             )
         )
         record = result.scalars().first()
@@ -185,7 +184,7 @@ class AuthRepository(IAuthRepository):
         result = await self._db.execute(
             select(TokenBlacklist).where(
                 TokenBlacklist.token_id == token_id,
-                TokenBlacklist.expires_at > datetime.now(timezone.utc),
+                TokenBlacklist.expires_at > datetime.now(UTC),
             )
         )
         return result.scalars().first() is not None

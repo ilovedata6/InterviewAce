@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 
 @dataclass(frozen=True)
 class StartInterviewInput:
     user_id: UUID
-    resume_id: Optional[UUID] = None  # None = use latest resume
+    resume_id: UUID | None = None  # None = use latest resume
     question_count: int = 12
     difficulty: str = "mixed"  # easy | medium | hard | mixed
-    focus_areas: Optional[List[str]] = None  # e.g. ["python", "system_design"]
+    focus_areas: list[str] | None = None  # e.g. ["python", "system_design"]
 
 
 @dataclass(frozen=True)
@@ -22,7 +22,7 @@ class SubmitAnswerInput:
     session_id: UUID
     question_id: UUID
     answer_text: str
-    time_taken_seconds: Optional[int] = None  # seconds the user spent answering
+    time_taken_seconds: int | None = None  # seconds the user spent answering
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ class InterviewSummaryResult:
     session_id: UUID
     final_score: float
     feedback_summary: str
-    question_feedback: List[dict] = field(default_factory=list)
-    score_breakdown: Optional[Dict[str, Any]] = None
-    strengths: Optional[List[str]] = None
-    weaknesses: Optional[List[str]] = None
+    question_feedback: list[dict] = field(default_factory=list)
+    score_breakdown: dict[str, Any] | None = None
+    strengths: list[str] | None = None
+    weaknesses: list[str] | None = None

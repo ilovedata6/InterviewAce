@@ -7,9 +7,9 @@ Backward-compatibility shim — delegates to the new LLM provider infrastructure
 
 from __future__ import annotations
 
-import structlog
 import warnings
-from typing import Any, Dict, List
+
+import structlog
 
 from app.infrastructure.llm.factory import get_llm_provider
 

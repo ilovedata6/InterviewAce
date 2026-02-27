@@ -4,16 +4,17 @@ Dashboard endpoints — user statistics and analytics.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, case
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from app.db.session import get_db
-from app.models.user import User
+from fastapi import APIRouter, Depends
+from sqlalchemy import case, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.deps import get_current_user
-from app.infrastructure.persistence.models.interview import InterviewSession, InterviewQuestion
+from app.db.session import get_db
+from app.infrastructure.persistence.models.interview import InterviewQuestion, InterviewSession
 from app.infrastructure.persistence.models.resume import Resume
+from app.models.user import User
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ router = APIRouter()
 async def get_user_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return key metrics for the authenticated user's dashboard:
 
     - Total interviews, completed interviews, average score
@@ -101,7 +102,10 @@ async def get_user_stats(
         .group_by(InterviewQuestion.category)
     )
     category_breakdown = {
-        r.category: {"avg_score": float(r.avg_score) if r.avg_score else 0, "count": r.question_count}
+        r.category: {
+            "avg_score": float(r.avg_score) if r.avg_score else 0,
+            "count": r.question_count,
+        }
         for r in category_result.all()
     }
 

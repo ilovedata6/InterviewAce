@@ -7,7 +7,7 @@ Concrete implementations: OpenAIProvider, GeminiProvider (Phase 3).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ILLMProvider(ABC):
@@ -20,7 +20,7 @@ class ILLMProvider(ABC):
         ...
 
     @abstractmethod
-    def generate_questions(self, prompts: Dict[str, str]) -> List[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
         """
         Generate interview questions from the given prompts.
 
@@ -33,7 +33,7 @@ class ILLMProvider(ABC):
         ...
 
     @abstractmethod
-    def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
+    def generate_feedback(self, prompts: dict[str, str]) -> dict[str, Any]:
         """
         Generate evaluation feedback from the given prompts.
 
@@ -59,7 +59,7 @@ class ILLMProvider(ABC):
         ...
 
     @abstractmethod
-    def parse_resume(self, text: str) -> Dict[str, Any]:
+    def parse_resume(self, text: str) -> dict[str, Any]:
         """
         Parse raw resume text into structured data.
 

@@ -1,21 +1,26 @@
-from pydantic import BaseModel, EmailStr, UUID4
-from typing import Optional
 from datetime import datetime
+
+from pydantic import UUID4, BaseModel, EmailStr
+
 
 class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    email: str | None = None
+
 
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class UserResponse(UserBase):
     id: UUID4
@@ -26,25 +31,32 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
+
 class ResetPasswordRequestIn(BaseModel):
     email: EmailStr
+
 
 class ResetPasswordConfirmIn(BaseModel):
     token: str
     new_password: str  # min_length=8 will be enforced in endpoint or service
 
+
 class MessageOut(BaseModel):
     message: str
+
 
 class EmailVerificationRequest(BaseModel):
     token: str
 
+
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
+
 
 class VerificationResponse(BaseModel):
     message: str

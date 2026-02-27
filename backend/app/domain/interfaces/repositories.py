@@ -10,23 +10,22 @@ from __future__ import annotations
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Optional
 
-from app.domain.entities.user import UserEntity
+from app.domain.entities.interview import InterviewQuestionEntity, InterviewSessionEntity
 from app.domain.entities.resume import ResumeEntity
-from app.domain.entities.interview import InterviewSessionEntity, InterviewQuestionEntity
+from app.domain.entities.user import UserEntity
 
 
 class IUserRepository(ABC):
     """Port for user persistence operations."""
 
     @abstractmethod
-    async def get_by_id(self, user_id: uuid.UUID) -> Optional[UserEntity]:
+    async def get_by_id(self, user_id: uuid.UUID) -> UserEntity | None:
         """Return a user by primary key, or None."""
         ...
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[UserEntity]:
+    async def get_by_email(self, email: str) -> UserEntity | None:
         """Return a user by email, or None."""
         ...
 
@@ -50,7 +49,7 @@ class IResumeRepository(ABC):
     """Port for resume persistence operations."""
 
     @abstractmethod
-    async def get_by_id(self, resume_id: uuid.UUID) -> Optional[ResumeEntity]:
+    async def get_by_id(self, resume_id: uuid.UUID) -> ResumeEntity | None:
         """Return a resume by primary key, or None."""
         ...
 
@@ -61,7 +60,7 @@ class IResumeRepository(ABC):
         *,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[ResumeEntity]:
+    ) -> list[ResumeEntity]:
         """Return all resumes belonging to a user (paginated)."""
         ...
 
@@ -72,9 +71,9 @@ class IResumeRepository(ABC):
         *,
         skip: int = 0,
         limit: int = 50,
-        status_filter: Optional[str] = None,
-        search: Optional[str] = None,
-    ) -> List[ResumeEntity]:
+        status_filter: str | None = None,
+        search: str | None = None,
+    ) -> list[ResumeEntity]:
         """Return resumes belonging to a user with optional filtering."""
         ...
 
@@ -83,14 +82,14 @@ class IResumeRepository(ABC):
         self,
         user_id: uuid.UUID,
         *,
-        status_filter: Optional[str] = None,
-        search: Optional[str] = None,
+        status_filter: str | None = None,
+        search: str | None = None,
     ) -> int:
         """Count resumes for a user with optional filtering."""
         ...
 
     @abstractmethod
-    async def get_latest_by_user_id(self, user_id: uuid.UUID) -> Optional[ResumeEntity]:
+    async def get_latest_by_user_id(self, user_id: uuid.UUID) -> ResumeEntity | None:
         """Return the most recently created resume for a user, or None."""
         ...
 
@@ -119,7 +118,7 @@ class IInterviewRepository(ABC):
     """Port for interview persistence operations."""
 
     @abstractmethod
-    async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[InterviewSessionEntity]:
+    async def get_session_by_id(self, session_id: uuid.UUID) -> InterviewSessionEntity | None:
         """Return an interview session by primary key, or None."""
         ...
 
@@ -130,7 +129,7 @@ class IInterviewRepository(ABC):
         *,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[InterviewSessionEntity]:
+    ) -> list[InterviewSessionEntity]:
         """Return all interview sessions for a user (paginated)."""
         ...
 
@@ -162,21 +161,21 @@ class IInterviewRepository(ABC):
     @abstractmethod
     async def get_questions_by_session_id(
         self, session_id: uuid.UUID
-    ) -> List[InterviewQuestionEntity]:
+    ) -> list[InterviewQuestionEntity]:
         """Return all questions for a session."""
         ...
 
     @abstractmethod
     async def get_next_unanswered_question(
         self, session_id: uuid.UUID
-    ) -> Optional[InterviewQuestionEntity]:
+    ) -> InterviewQuestionEntity | None:
         """Return the next unanswered question for a session, or None."""
         ...
 
     @abstractmethod
     async def get_question_by_id(
         self, question_id: uuid.UUID, session_id: uuid.UUID
-    ) -> Optional[InterviewQuestionEntity]:
+    ) -> InterviewQuestionEntity | None:
         """Return a specific question within a session, or None."""
         ...
 
@@ -217,7 +216,7 @@ class IAuthRepository(ABC):
 
     @abstractmethod
     async def create_session(
-        self, user_id: uuid.UUID, ip_address: str, user_agent: Optional[str]
+        self, user_id: uuid.UUID, ip_address: str, user_agent: str | None
     ) -> str:
         """Create a new user session. Returns the session ID."""
         ...
@@ -233,7 +232,7 @@ class IAuthRepository(ABC):
         ...
 
     @abstractmethod
-    async def verify_and_consume_reset_token(self, token: str) -> Optional[uuid.UUID]:
+    async def verify_and_consume_reset_token(self, token: str) -> uuid.UUID | None:
         """Verify a reset token and mark as used. Returns user_id if valid, else None."""
         ...
 

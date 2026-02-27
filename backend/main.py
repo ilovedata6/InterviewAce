@@ -2,12 +2,13 @@ from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI
-from app.core.config import settings
-from app.core.logging_config import setup_logging
-from app.api.v1.api import api_router
+
 from app.api.health import router as health_router
-from app.core.middleware import setup_middleware
+from app.api.v1.api import api_router
+from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
+from app.core.logging_config import setup_logging
+from app.core.middleware import setup_middleware
 
 # Configure structured logging before anything else
 setup_logging()
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
     yield
     # ── shutdown ───────────────────────────────────────────────────────────
     from app.infrastructure.cache.redis_client import close_redis
+
     await close_redis()
 
 
@@ -88,4 +90,5 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

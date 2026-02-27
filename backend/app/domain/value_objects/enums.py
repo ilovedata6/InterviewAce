@@ -5,10 +5,10 @@ These enums are imported by ORM models, Pydantic schemas, and services alike.
 They live in the domain layer because they represent core business concepts.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ResumeStatus(str, Enum):
+class ResumeStatus(StrEnum):
     """Processing status of a resume."""
 
     PENDING = "pending"
@@ -17,7 +17,7 @@ class ResumeStatus(str, Enum):
     ERROR = "error"
 
 
-class FileType(str, Enum):
+class FileType(StrEnum):
     """Allowed upload MIME types."""
 
     PDF = "application/pdf"
@@ -26,7 +26,7 @@ class FileType(str, Enum):
     TXT = "text/plain"
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """User roles for RBAC."""
 
     USER = "user"
@@ -34,7 +34,7 @@ class UserRole(str, Enum):
     MODERATOR = "moderator"
 
 
-class InterviewDifficulty(str, Enum):
+class InterviewDifficulty(StrEnum):
     """Difficulty level for interview questions."""
 
     EASY = "easy"
@@ -43,7 +43,7 @@ class InterviewDifficulty(str, Enum):
     MIXED = "mixed"
 
 
-class QuestionCategory(str, Enum):
+class QuestionCategory(StrEnum):
     """Category / type of interview question."""
 
     TECHNICAL = "technical"

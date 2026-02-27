@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.auth import EmailVerificationRequest, VerificationResponse
-from app.application.use_cases.auth import VerifyEmailUseCase
+
 from app.api.deps import get_verify_email_uc
+from app.application.use_cases.auth import VerifyEmailUseCase
 from app.domain.exceptions import ValidationError
+from app.schemas.auth import EmailVerificationRequest, VerificationResponse
 
 router = APIRouter()
+
 
 @router.post(
     "/verify-email",
@@ -24,5 +26,5 @@ async def verify_email(
     try:
         msg = await use_case.execute(payload.token)
     except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e.message))
+        raise HTTPException(status_code=400, detail=str(e.message)) from e
     return VerificationResponse(message=msg)

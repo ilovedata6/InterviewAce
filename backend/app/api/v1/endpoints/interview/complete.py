@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import UUID
-from app.api.deps import get_current_user, get_complete_interview_uc
-from app.models.user import User
-from app.schemas.interview import SummaryOut, QuestionFeedback
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.deps import get_complete_interview_uc, get_current_user
 from app.application.use_cases.interview import CompleteInterviewUseCase
 from app.domain.exceptions import EntityNotFoundError, InterviewError
+from app.models.user import User
+from app.schemas.interview import QuestionFeedback, SummaryOut
 
 router = APIRouter()
+
 
 @router.post(
     "/{session_id}/complete",
@@ -34,10 +37,10 @@ async def complete_interview(
     """
     try:
         result = await use_case.execute(current_user.id, session_id)
-    except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Session not found or not owned by user")
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Session not found or not owned by user") from e
     except InterviewError as e:
-        raise HTTPException(status_code=500, detail=str(e.message))
+        raise HTTPException(status_code=500, detail=str(e.message)) from e
     return SummaryOut(
         session_id=result.session_id,
         final_score=result.final_score,

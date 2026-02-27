@@ -1,8 +1,8 @@
-from pydantic_settings import BaseSettings
-from pydantic import field_validator
-from typing import Optional, List
 import json
+
 from dotenv import load_dotenv
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
@@ -33,14 +33,14 @@ class Settings(BaseSettings):
         if v in insecure_values:
             raise ValueError(
                 "SECRET_KEY must be set to a secure random value. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         if len(v) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters long")
         return v
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "interview_ace"
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
 
     @property
     def database_url(self) -> str:
@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     # ── File Upload ───────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10 MB
-    ALLOWED_FILE_TYPES: List[str] = [
+    ALLOWED_FILE_TYPES: list[str] = [
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -134,7 +134,7 @@ class Settings(BaseSettings):
 
     # ── Legacy alias (used by existing services until migration) ──────────
     @property
-    def LLM_API_KEY(self) -> Optional[str]:
+    def LLM_API_KEY(self) -> str | None:  # noqa: N802
         """Backward compat: returns GEMINI_API_KEY for v1 services."""
         return self.GEMINI_API_KEY or None
 
@@ -163,4 +163,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

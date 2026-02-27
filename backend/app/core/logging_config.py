@@ -31,10 +31,10 @@ def setup_logging() -> None:
 
     # -- Shared processors applied to every log event ----------------------
     shared_processors: list[structlog.types.Processor] = [
-        structlog.contextvars.merge_contextvars,          # inject request_id etc.
-        structlog.stdlib.add_log_level,                   # level field
-        structlog.stdlib.add_logger_name,                 # logger name
-        structlog.processors.TimeStamper(fmt="iso"),      # ISO-8601 timestamp
+        structlog.contextvars.merge_contextvars,  # inject request_id etc.
+        structlog.stdlib.add_log_level,  # level field
+        structlog.stdlib.add_logger_name,  # logger name
+        structlog.processors.TimeStamper(fmt="iso"),  # ISO-8601 timestamp
         structlog.processors.StackInfoRenderer(),
         structlog.processors.UnicodeDecoder(),
     ]

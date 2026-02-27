@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.core.middleware import limiter
-from app.schemas.auth import Token
-from app.application.use_cases.auth import LoginUseCase
-from app.application.dto.auth import LoginInput
+
 from app.api.deps import get_login_uc
-from app.domain.exceptions import AuthenticationError, AccountLockedError
+from app.application.dto.auth import LoginInput
+from app.application.use_cases.auth import LoginUseCase
+from app.core.middleware import limiter
+from app.domain.exceptions import AccountLockedError, AuthenticationError
+from app.schemas.auth import Token
 
 router = APIRouter()
+
 
 @router.post(
     "/login",
@@ -42,17 +44,17 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e.message),
-        )
+        ) from e
     except AuthenticationError as e:
         if "verify your email" in e.message.lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=e.message,
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.message,
-        )
+        ) from e
     return {
         "access_token": result.access_token,
         "refresh_token": result.refresh_token,

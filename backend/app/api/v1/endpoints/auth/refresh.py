@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_refresh_uc
+from app.application.use_cases.auth import RefreshTokenUseCase
 from app.core.security import TokenException
 from app.db.session import get_db
 from app.schemas.auth import Token
-from app.application.use_cases.auth import RefreshTokenUseCase
-from app.api.deps import get_refresh_uc
 
 router = APIRouter()
+
 
 @router.post(
     "/refresh",
@@ -27,17 +29,13 @@ async def refresh_token(
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header"
         )
     token = auth_header.split(" ")[1]
     try:
         result = await use_case.execute(token, db)
     except TokenException as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
     return {
         "access_token": result.access_token,
         "refresh_token": result.refresh_token,

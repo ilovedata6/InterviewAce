@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.domain.value_objects.enums import FileType, ResumeStatus
 
@@ -17,24 +17,24 @@ class ResumeEntity:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     user_id: uuid.UUID = field(default_factory=uuid.uuid4)
     title: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     file_path: str = ""
     file_name: str = ""
     file_size: int = 0
     file_type: FileType = FileType.PDF
-    inferred_role: Optional[str] = None
+    inferred_role: str | None = None
     status: ResumeStatus = ResumeStatus.PENDING
-    analysis: Optional[Dict[str, Any]] = None
+    analysis: dict[str, Any] | None = None
     version: int = 1
-    years_of_experience: Optional[int] = None
-    skills: Optional[List[str]] = None
-    parent_version_id: Optional[uuid.UUID] = None
+    years_of_experience: int | None = None
+    skills: list[str] | None = None
+    parent_version_id: uuid.UUID | None = None
     is_public: bool = False
-    share_token: Optional[str] = None
-    confidence_score: Optional[float] = None
-    processing_time: Optional[float] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    share_token: str | None = None
+    confidence_score: float | None = None
+    processing_time: float | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # ------------------------------------------------------------------
     # Domain behaviour
@@ -43,7 +43,9 @@ class ResumeEntity:
     def mark_processing(self) -> None:
         self.status = ResumeStatus.PROCESSING
 
-    def mark_analyzed(self, analysis: Dict[str, Any], confidence: float, processing_time: float) -> None:
+    def mark_analyzed(
+        self, analysis: dict[str, Any], confidence: float, processing_time: float
+    ) -> None:
         self.status = ResumeStatus.ANALYZED
         self.analysis = analysis
         self.confidence_score = confidence

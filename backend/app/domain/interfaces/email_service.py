@@ -7,7 +7,6 @@ Concrete implementation: SMTPEmailService (infrastructure/email/).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 
 class IEmailService(ABC):
@@ -20,9 +19,9 @@ class IEmailService(ABC):
         subject: str,
         body: str,
         *,
-        html_body: Optional[str] = None,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        html_body: str | None = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
     ) -> None:
         """
         Send an email.

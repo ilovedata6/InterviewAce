@@ -1,14 +1,15 @@
 from fastapi import APIRouter
-from .register import router as register_router
+
+from .change_password import router as change_password_router
 from .login import router as login_router
 from .logout import router as logout_router
 from .me import router as me_router
 from .refresh import router as refresh_router
-from .change_password import router as change_password_router
-from .reset_password_request import router as reset_password_request_router
-from .reset_password_confirm import router as reset_password_confirm_router
-from .verify_email import router as verify_email_router
+from .register import router as register_router
 from .resend_verification import router as resend_verification_router
+from .reset_password_confirm import router as reset_password_confirm_router
+from .reset_password_request import router as reset_password_request_router
+from .verify_email import router as verify_email_router
 
 router = APIRouter()
 

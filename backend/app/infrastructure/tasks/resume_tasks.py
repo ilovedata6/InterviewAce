@@ -8,8 +8,8 @@ can return ``202 Accepted`` immediately.
 from __future__ import annotations
 
 import os
+
 import structlog
-from celery import states
 
 from app.infrastructure.tasks.celery_app import celery_app
 
@@ -24,11 +24,12 @@ def _get_sync_session():
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+
     from app.core.config import settings
 
     engine = create_engine(settings.database_url, pool_pre_ping=True)
-    Session = sessionmaker(bind=engine)
-    return Session()
+    session_factory = sessionmaker(bind=engine)
+    return session_factory()
 
 
 @celery_app.task(
@@ -54,10 +55,11 @@ def parse_resume_task(self, file_path: str, user_id: str, resume_id: str):
     resume_id : str
         UUID of the placeholder Resume row to update.
     """
-    from app.infrastructure.llm.factory import get_llm_provider
-    from app.schemas.resume import ResumeStatus, FileType
-    from app.models.resume import Resume as ResumeModel
     from sqlalchemy import select
+
+    from app.infrastructure.llm.factory import get_llm_provider
+    from app.models.resume import Resume as ResumeModel
+    from app.schemas.resume import ResumeStatus
 
     logger.info(
         "parse_resume_task_started",
@@ -118,7 +120,7 @@ def parse_resume_task(self, file_path: str, user_id: str, resume_id: str):
             db.rollback()
 
         # Retry up to max_retries
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
     finally:
         db.close()

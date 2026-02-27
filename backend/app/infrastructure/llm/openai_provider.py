@@ -8,13 +8,13 @@ for structured JSON output (no markdown fence cleaning needed).
 from __future__ import annotations
 
 import json
+from typing import Any
+
 import structlog
-from typing import Any, Dict, List
+from openai import APIError, APITimeoutError, OpenAI, RateLimitError
 
-from openai import OpenAI, APIError, APITimeoutError, RateLimitError
-
-from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.exceptions import LLMProviderError
+from app.domain.interfaces.llm_provider import ILLMProvider
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +47,7 @@ class OpenAIProvider(ILLMProvider):
     def provider_name(self) -> str:
         return "OpenAI"
 
-    def generate_questions(self, prompts: Dict[str, str]) -> List[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
         """
         Generate interview questions using OpenAI JSON mode.
 
@@ -70,7 +70,7 @@ class OpenAIProvider(ILLMProvider):
             # Accept both {"questions": [...]} and top-level [...]
             questions_list = data if isinstance(data, list) else data.get("questions", [])
 
-            question_texts: List[str] = []
+            question_texts: list[str] = []
             for item in questions_list:
                 if isinstance(item, dict) and "question" in item:
                     question_texts.append(item["question"])
@@ -79,9 +79,7 @@ class OpenAIProvider(ILLMProvider):
                 else:
                     logger.warning("unexpected_question_item", item=repr(item))
 
-            logger.info(
-                "openai_questions_generated", count=len(question_texts), model=self._model
-            )
+            logger.info("openai_questions_generated", count=len(question_texts), model=self._model)
             return question_texts
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
@@ -94,7 +92,7 @@ class OpenAIProvider(ILLMProvider):
             logger.error("openai_unexpected_error", method="generate_questions", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_questions unexpected error: {exc}") from exc
 
-    def generate_feedback(self, prompts: Dict[str, str]) -> Dict[str, Any]:
+    def generate_feedback(self, prompts: dict[str, str]) -> dict[str, Any]:
         """
         Generate interview feedback/evaluation using OpenAI JSON mode.
         """
@@ -144,7 +142,7 @@ class OpenAIProvider(ILLMProvider):
             logger.error("openai_unexpected_error", method="generate_completion", error=str(exc))
             raise LLMProviderError(f"OpenAI generate_completion unexpected error: {exc}") from exc
 
-    def parse_resume(self, text: str) -> Dict[str, Any]:
+    def parse_resume(self, text: str) -> dict[str, Any]:
         """
         Parse raw resume text into structured data using OpenAI JSON mode.
         """

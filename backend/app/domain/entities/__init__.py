@@ -1,8 +1,8 @@
 """Domain entities — pure business objects with no framework dependencies."""
 
-from app.domain.entities.user import UserEntity
+from app.domain.entities.interview import InterviewQuestionEntity, InterviewSessionEntity
 from app.domain.entities.resume import ResumeEntity
-from app.domain.entities.interview import InterviewSessionEntity, InterviewQuestionEntity
+from app.domain.entities.user import UserEntity
 
 __all__ = [
     "UserEntity",

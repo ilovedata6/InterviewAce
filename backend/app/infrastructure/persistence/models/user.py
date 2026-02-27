@@ -1,11 +1,12 @@
 """User ORM model — infrastructure persistence layer."""
 
-from sqlalchemy import Column, String, UUID, Boolean
 import uuid
+
+from sqlalchemy import UUID, Boolean, Column, String
 from sqlalchemy.orm import relationship
 
-from app.infrastructure.persistence.models.base import Base, TimestampMixin
 from app.domain.value_objects.enums import UserRole
+from app.infrastructure.persistence.models.base import Base, TimestampMixin
 
 
 class User(Base, TimestampMixin):

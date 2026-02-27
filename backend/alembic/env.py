@@ -6,10 +6,11 @@ so that autogenerate can detect schema changes.
 """
 
 import sys
-from pathlib import Path
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
+
 from alembic import context
 
 # ── Ensure backend/ is on sys.path so `app.*` imports work ─────────────
@@ -17,12 +18,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # ── Import app settings and all models ────────────────────────────────────
 from app.core.config import settings  # noqa: E402
-from app.infrastructure.persistence.models.base import Base  # noqa: E402
 
 # Import every model module so Base.metadata knows about all tables
 from app.infrastructure.persistence.models import (  # noqa: E402, F401
-    user, resume, interview, security,
+    interview,
+    resume,
+    security,
+    user,
 )
+from app.infrastructure.persistence.models.base import Base  # noqa: E402
 
 # ── Alembic Config object ────────────────────────────────────────────────
 config = context.config

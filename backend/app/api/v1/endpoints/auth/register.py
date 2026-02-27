@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from app.core.middleware import limiter
-from app.schemas.auth import UserCreate, VerificationResponse
-from app.application.use_cases.auth import RegisterUseCase
-from app.application.dto.auth import RegisterInput
+
 from app.api.deps import get_register_uc
+from app.application.dto.auth import RegisterInput
+from app.application.use_cases.auth import RegisterUseCase
+from app.core.middleware import limiter
 from app.domain.exceptions import DuplicateEntityError
+from app.schemas.auth import UserCreate, VerificationResponse
 
 router = APIRouter()
+
 
 @router.post(
     "/register",
@@ -34,9 +36,9 @@ async def register(
                 full_name=user.full_name,
             )
         )
-    except DuplicateEntityError:
+    except DuplicateEntityError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
-        )
+        ) from e
     return VerificationResponse(message=message)

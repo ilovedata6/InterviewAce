@@ -7,9 +7,10 @@ background jobs dispatched by the resume upload (or any future Celery task).
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Any
+
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, Any
 
 from app.infrastructure.tasks.celery_app import celery_app
 
@@ -19,8 +20,8 @@ router = APIRouter()
 class TaskStatusResponse(BaseModel):
     task_id: str
     status: str  # PENDING | STARTED | SUCCESS | FAILURE | RETRY | REVOKED
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    result: Any | None = None
+    error: str | None = None
 
 
 @router.get(
