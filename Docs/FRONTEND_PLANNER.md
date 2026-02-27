@@ -29,15 +29,15 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F1.1 | Install shadcn/ui components: `button`, `card`, `input`, `form`, `label`, `table`, `dialog`, `dropdown-menu`, `badge`, `skeleton`, `tabs`, `progress`, `separator`, `avatar`, `sheet` | `feat(fe): add shadcn/ui components` | ⬜ |
-| F1.2 | Install `sonner` toast component via shadcn/ui | `feat(fe): add toast notifications` | ⬜ |
-| F1.3 | Create `lib/utils.ts` — `cn()` helper (merge Tailwind classes) | `feat(fe): add utility helpers` | ⬜ |
-| F1.4 | Create `components/layout/app-sidebar.tsx` — sidebar nav with links: Dashboard, Resumes, Interviews, Profile | `feat(fe): create app sidebar` | ⬜ |
-| F1.5 | Create `components/layout/app-navbar.tsx` — top bar with user avatar dropdown (Profile, Logout) | `feat(fe): create app navbar` | ⬜ |
-| F1.6 | Create `app/(app)/layout.tsx` — authenticated app shell (sidebar + navbar + children) | `feat(fe): create authenticated layout` | ⬜ |
-| F1.7 | Create `components/layout/auth-layout.tsx` — centered card layout for login/register pages | `feat(fe): create auth layout` | ⬜ |
-| F1.8 | Create global `loading.tsx` and `error.tsx` | `feat(fe): add loading skeleton and error boundary` | ⬜ |
-| F1.9 | Define color scheme / CSS variables in `globals.css` (professional dark/light theme) | `style(fe): define color scheme` | ⬜ |
+| F1.1 | Install shadcn/ui components: `button`, `card`, `input`, `form`, `label`, `table`, `dialog`, `dropdown-menu`, `badge`, `skeleton`, `tabs`, `progress`, `separator`, `avatar`, `sheet` | `feat(fe): add shadcn/ui components` | ✅ |
+| F1.2 | Install `sonner` toast component via shadcn/ui | `feat(fe): add toast notifications` | ✅ |
+| F1.3 | Create `lib/utils.ts` — `cn()` helper (merge Tailwind classes) | `feat(fe): add utility helpers` | ✅ |
+| F1.4 | Create `components/layout/app-sidebar.tsx` — sidebar nav with links: Dashboard, Resumes, Interviews, Profile | `feat(fe): create app sidebar` | ✅ |
+| F1.5 | Create `components/layout/app-navbar.tsx` — top bar with user avatar dropdown (Profile, Logout) | `feat(fe): create app navbar` | ✅ |
+| F1.6 | Create `app/(app)/layout.tsx` — authenticated app shell (sidebar + navbar + children) | `feat(fe): create authenticated layout` | ✅ |
+| F1.7 | Create `components/layout/auth-layout.tsx` — centered card layout for login/register pages | `feat(fe): create auth layout` | ✅ |
+| F1.8 | Create global `loading.tsx` and `error.tsx` | `feat(fe): add loading skeleton and error boundary` | ✅ |
+| F1.9 | Define color scheme / CSS variables in `globals.css` (professional dark/light theme) | `style(fe): define color scheme` | ✅ |
 
 **Checkpoint:** App shell renders with sidebar, navbar. Links don't go anywhere yet. Responsive on mobile.
 
@@ -271,7 +271,7 @@
 | Phase | Name | Tasks | Status |
 |-------|------|-------|--------|
 | F0 | Project Scaffold & Tooling | 8 | ✅ |
-| F1 | Design System & Shared Components | 9 | ⬜ |
+| F1 | Design System & Shared Components | 9 | ✅ |
 | F2 | TypeScript Types & API Client | 8 | ⬜ |
 | F3 | BFF Proxy Layer | 14 | ⬜ |
 | F4 | Auth Middleware & Store | 5 | ⬜ |
