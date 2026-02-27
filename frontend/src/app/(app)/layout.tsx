@@ -1,22 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
+  const { user, isLoading, isAdmin, logout } = useAuth();
 
-  // TODO: Replace with real user from auth context (Phase F4)
-  const user = { full_name: "Demo User", email: "demo@interviewace.app" };
-  const isAdmin = false;
-
-  const handleLogout = () => {
-    // TODO: Implement logout via auth store (Phase F4)
-    console.log("logout");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
+
+  // Show skeleton while auth state is loading
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="space-y-4 text-center">
+          <Skeleton className="mx-auto h-12 w-12 rounded-full" />
+          <Skeleton className="mx-auto h-4 w-48" />
+        </div>
+      </div>
+    );
+  }
+
+  // User object for navbar (fallback for safety)
+  const displayUser = user ?? { full_name: "User", email: "" };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -35,7 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <AppNavbar
-          user={user}
+          user={displayUser}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           onLogout={handleLogout}
         />
