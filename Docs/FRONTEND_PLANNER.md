@@ -48,14 +48,14 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F2.1 | Create `types/auth.ts` — `User`, `LoginRequest`, `RegisterRequest`, `TokenResponse`, `PasswordResetRequest`, `PasswordChangeRequest` | `feat(fe): define auth types` | ⬜ |
-| F2.2 | Create `types/resume.ts` — `Resume`, `ResumeAnalysis`, `ResumeVersion`, `ResumeUploadResponse`, `ExportFormat` | `feat(fe): define resume types` | ⬜ |
-| F2.3 | Create `types/interview.ts` — `InterviewSession`, `Question`, `Answer`, `InterviewSummary`, `InterviewConfig` | `feat(fe): define interview types` | ⬜ |
-| F2.4 | Create `types/common.ts` — `PaginatedResponse<T>`, `ApiError`, `ApiResponse<T>` | `feat(fe): define common types` | ⬜ |
-| F2.5 | Create `lib/api-client.ts` — typed fetch wrapper (`get`, `post`, `put`, `delete`, `upload`) with error handling | `feat(fe): create api client` | ⬜ |
-| F2.6 | Create `lib/validations/auth.ts` — Zod schemas: `loginSchema`, `registerSchema`, `forgotPasswordSchema`, `resetPasswordSchema`, `changePasswordSchema` | `feat(fe): add auth validation schemas` | ⬜ |
-| F2.7 | Create `lib/validations/resume.ts` — Zod schemas: `uploadSchema`, `exportSchema` | `feat(fe): add resume validation schemas` | ⬜ |
-| F2.8 | Create `lib/validations/interview.ts` — Zod schemas: `interviewConfigSchema`, `answerSchema` | `feat(fe): add interview validation schemas` | ⬜ |
+| F2.1 | Create `types/auth.ts` — `User`, `LoginRequest`, `RegisterRequest`, `TokenResponse`, `PasswordResetRequest`, `PasswordChangeRequest` | `feat(fe): define auth types` | ✅ |
+| F2.2 | Create `types/resume.ts` — `Resume`, `ResumeAnalysis`, `ResumeVersion`, `ResumeUploadResponse`, `ExportFormat` | `feat(fe): define resume types` | ✅ |
+| F2.3 | Create `types/interview.ts` — `InterviewSession`, `Question`, `Answer`, `InterviewSummary`, `InterviewConfig` | `feat(fe): define interview types` | ✅ |
+| F2.4 | Create `types/common.ts` — `PaginatedResponse<T>`, `ApiError`, `ApiResponse<T>` | `feat(fe): define common types` | ✅ |
+| F2.5 | Create `lib/api-client.ts` — typed fetch wrapper (`get`, `post`, `put`, `delete`, `upload`) with error handling | `feat(fe): create api client` | ✅ |
+| F2.6 | Create `lib/validations/auth.ts` — Zod schemas: `loginSchema`, `registerSchema`, `forgotPasswordSchema`, `resetPasswordSchema`, `changePasswordSchema` | `feat(fe): add auth validation schemas` | ✅ |
+| F2.7 | Create `lib/validations/resume.ts` — Zod schemas: `uploadSchema`, `exportSchema` | `feat(fe): add resume validation schemas` | ✅ |
+| F2.8 | Create `lib/validations/interview.ts` — Zod schemas: `interviewConfigSchema`, `answerSchema` | `feat(fe): add interview validation schemas` | ✅ |
 
 **Checkpoint:** All types compile. Zod schemas match FastAPI Pydantic models. apiClient is tested manually.
 
@@ -272,7 +272,7 @@
 |-------|------|-------|--------|
 | F0 | Project Scaffold & Tooling | 8 | ✅ |
 | F1 | Design System & Shared Components | 9 | ✅ |
-| F2 | TypeScript Types & API Client | 8 | ⬜ |
+| F2 | TypeScript Types & API Client | 8 | ✅ |
 | F3 | BFF Proxy Layer | 14 | ⬜ |
 | F4 | Auth Middleware & Store | 5 | ⬜ |
 | F5 | Landing Page | 4 | ⬜ |
