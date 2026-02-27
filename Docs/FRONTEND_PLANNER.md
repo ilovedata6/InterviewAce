@@ -138,11 +138,11 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F7.1 | Create `components/dashboard/stats-cards.tsx` — 4 cards: Total Interviews, Average Score, Resumes Uploaded, Last Activity | `feat(fe): dashboard stats cards` | ⬜ |
-| F7.2 | Create `components/dashboard/quick-actions.tsx` — "Start Interview" + "Upload Resume" buttons | `feat(fe): dashboard quick actions` | ⬜ |
-| F7.3 | Create `components/dashboard/recent-activity.tsx` — list of recent interviews + resume uploads | `feat(fe): dashboard recent activity` | ⬜ |
-| F7.4 | Create `app/(app)/dashboard/page.tsx` — compose dashboard components, fetch data via React Query | `feat(fe): create dashboard page` | ⬜ |
-| F7.5 | Add loading skeletons for each dashboard section | `style(fe): dashboard loading skeletons` | ⬜ |
+| F7.1 | Create `components/dashboard/stats-cards.tsx` — 4 cards: Total Interviews, Average Score, Resumes Uploaded, Last Activity | `feat(fe): dashboard stats cards` | ✅ |
+| F7.2 | Create `components/dashboard/quick-actions.tsx` — "Start Interview" + "Upload Resume" buttons | `feat(fe): dashboard quick actions` | ✅ |
+| F7.3 | Create `components/dashboard/recent-activity.tsx` — list of recent interviews + resume uploads | `feat(fe): dashboard recent activity` | ✅ |
+| F7.4 | Create `app/(app)/dashboard/page.tsx` — compose dashboard components, fetch data via React Query | `feat(fe): create dashboard page` | ✅ |
+| F7.5 | Add loading skeletons for each dashboard section | `style(fe): dashboard loading skeletons` | ✅ |
 
 **Checkpoint:** Dashboard shows real data from API. Stats update after interviews/uploads.
 
@@ -277,7 +277,7 @@
 | F4 | Auth Middleware & Store | 5 | ✅ |
 | F5 | Landing Page | 4 | ✅ |
 | F6 | Auth Pages | 9 | ✅ |
-| F7 | Dashboard Page | 5 | ⬜ |
+| F7 | Dashboard Page | 5 | ✅ |
 | F8 | Resume Module | 10 | ⬜ |
 | F9 | Interview Module | 13 | ⬜ |
 | F10 | Profile & Settings | 3 | ⬜ |
