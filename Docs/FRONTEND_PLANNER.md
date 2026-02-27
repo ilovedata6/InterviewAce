@@ -66,20 +66,20 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F3.1 | Create BFF helper: `lib/bff.ts` — utility to read cookie, call FastAPI, handle token refresh | `feat(fe): create bff proxy utility` | ⬜ |
-| F3.2 | Create `app/api/auth/login/route.ts` — login, set httpOnly cookies, return user | `feat(fe): BFF login route` | ⬜ |
-| F3.3 | Create `app/api/auth/register/route.ts` — register, return user | `feat(fe): BFF register route` | ⬜ |
-| F3.4 | Create `app/api/auth/logout/route.ts` — call FastAPI logout, clear cookies | `feat(fe): BFF logout route` | ⬜ |
-| F3.5 | Create `app/api/auth/refresh/route.ts` — refresh token, update cookies | `feat(fe): BFF token refresh route` | ⬜ |
-| F3.6 | Create `app/api/auth/me/route.ts` — proxy GET /auth/me | `feat(fe): BFF me route` | ⬜ |
-| F3.7 | Create remaining auth routes: verify-email, forgot-password, reset-password, change-password | `feat(fe): BFF remaining auth routes` | ⬜ |
-| F3.8 | Create `app/api/resumes/route.ts` — GET list + POST upload (multipart) | `feat(fe): BFF resume list/upload routes` | ⬜ |
-| F3.9 | Create `app/api/resumes/[id]/route.ts` — GET detail, DELETE | `feat(fe): BFF resume detail routes` | ⬜ |
-| F3.10 | Create resume sub-routes: analysis, versions, share, export | `feat(fe): BFF resume sub-routes` | ⬜ |
-| F3.11 | Create `app/api/interviews/start/route.ts` — POST start | `feat(fe): BFF interview start route` | ⬜ |
-| F3.12 | Create interview session routes: GET session, next-question, answer, complete, summary | `feat(fe): BFF interview session routes` | ⬜ |
-| F3.13 | Create `app/api/interviews/history/route.ts` — GET history | `feat(fe): BFF interview history route` | ⬜ |
-| F3.14 | Create admin routes: users, stats | `feat(fe): BFF admin routes` | ⬜ |
+| F3.1 | Create BFF helper: `lib/bff.ts` — utility to read cookie, call FastAPI, handle token refresh | `feat(fe): create bff proxy utility` | ✅ |
+| F3.2 | Create `app/api/auth/login/route.ts` — login, set httpOnly cookies, return user | `feat(fe): BFF login route` | ✅ |
+| F3.3 | Create `app/api/auth/register/route.ts` — register, return user | `feat(fe): BFF register route` | ✅ |
+| F3.4 | Create `app/api/auth/logout/route.ts` — call FastAPI logout, clear cookies | `feat(fe): BFF logout route` | ✅ |
+| F3.5 | Create `app/api/auth/refresh/route.ts` — refresh token, update cookies | `feat(fe): BFF token refresh route` | ✅ |
+| F3.6 | Create `app/api/auth/me/route.ts` — proxy GET /auth/me | `feat(fe): BFF me route` | ✅ |
+| F3.7 | Create remaining auth routes: verify-email, forgot-password, reset-password, change-password | `feat(fe): BFF remaining auth routes` | ✅ |
+| F3.8 | Create `app/api/resumes/route.ts` — GET list + POST upload (multipart) | `feat(fe): BFF resume list/upload routes` | ✅ |
+| F3.9 | Create `app/api/resumes/[id]/route.ts` — GET detail, DELETE | `feat(fe): BFF resume detail routes` | ✅ |
+| F3.10 | Create resume sub-routes: analysis, versions, share, export | `feat(fe): BFF resume sub-routes` | ✅ |
+| F3.11 | Create `app/api/interviews/start/route.ts` — POST start | `feat(fe): BFF interview start route` | ✅ |
+| F3.12 | Create interview session routes: GET session, next-question, answer, complete, summary | `feat(fe): BFF interview session routes` | ✅ |
+| F3.13 | Create `app/api/interviews/history/route.ts` — GET history | `feat(fe): BFF interview history route` | ✅ |
+| F3.14 | Create admin routes: users, stats | `feat(fe): BFF admin routes` | ✅ |
 
 **Checkpoint:** All FastAPI endpoints are reachable via `/api/*`. JWT is never exposed to the browser.
 
@@ -273,7 +273,7 @@
 | F0 | Project Scaffold & Tooling | 8 | ✅ |
 | F1 | Design System & Shared Components | 9 | ✅ |
 | F2 | TypeScript Types & API Client | 8 | ✅ |
-| F3 | BFF Proxy Layer | 14 | ⬜ |
+| F3 | BFF Proxy Layer | 14 | ✅ |
 | F4 | Auth Middleware & Store | 5 | ⬜ |
 | F5 | Landing Page | 4 | ⬜ |
 | F6 | Auth Pages | 9 | ⬜ |
