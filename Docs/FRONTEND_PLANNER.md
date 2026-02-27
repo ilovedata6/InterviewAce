@@ -209,10 +209,10 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F11.1 | Create `app/(app)/admin/layout.tsx` — admin guard, admin sidebar links | `feat(fe): create admin layout` | ⬜ |
-| F11.2 | Create `components/admin/user-table.tsx` — sortable, paginated user list: name, email, status, role, actions | `feat(fe): create admin user table` | ⬜ |
-| F11.3 | Create `app/(app)/admin/users/page.tsx` — user management: activate/deactivate, view details | `feat(fe): create admin users page` | ⬜ |
-| F11.4 | Create `app/(app)/admin/stats/page.tsx` — system stats: total users, total interviews, active sessions | `feat(fe): create admin stats page` | ⬜ |
+| F11.1 | Create `app/(app)/admin/layout.tsx` — admin guard, admin sidebar links | `feat(fe): create admin layout` | ✅ |
+| F11.2 | Create `components/admin/user-table.tsx` — sortable, paginated user list: name, email, status, role, actions | `feat(fe): create admin user table` | ✅ |
+| F11.3 | Create `app/(app)/admin/users/page.tsx` — user management: activate/deactivate, view details | `feat(fe): create admin users page` | ✅ |
+| F11.4 | Create `app/(app)/admin/stats/page.tsx` — system stats: total users, total interviews, active sessions | `feat(fe): create admin stats page` | ✅ |
 
 **Checkpoint:** Admin can list users, toggle active status, view system stats.
 
@@ -223,10 +223,10 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F12.1 | Install `recharts` | `chore(fe): install recharts` | ⬜ |
-| F12.2 | Create `components/dashboard/score-trend-chart.tsx` — line chart showing interview scores over time | `feat(fe): add score trend chart` | ⬜ |
-| F12.3 | Add skill radar chart — showing strengths/weaknesses from interview feedback | `feat(fe): add skill radar chart` | ⬜ |
-| F12.4 | Add interview frequency chart — interviews per week/month | `feat(fe): add interview frequency chart` | ⬜ |
+| F12.1 | Install `recharts` | `chore(fe): install recharts` | ✅ |
+| F12.2 | Create `components/dashboard/score-trend-chart.tsx` — line chart showing interview scores over time | `feat(fe): add score trend chart` | ✅ |
+| F12.3 | Add skill radar chart — showing strengths/weaknesses from interview feedback | `feat(fe): add skill radar chart` | ✅ |
+| F12.4 | Add interview frequency chart — interviews per week/month | `feat(fe): add interview frequency chart` | ✅ |
 
 **Checkpoint:** Dashboard has 3 visual charts showing meaningful analytics.
 
@@ -237,15 +237,15 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F13.1 | Set up Vitest + React Testing Library | `chore(fe): configure vitest` | ⬜ |
-| F13.2 | Unit tests for auth store (login, logout, token refresh) | `test(fe): auth store unit tests` | ⬜ |
-| F13.3 | Unit tests for interview store (state machine transitions) | `test(fe): interview store unit tests` | ⬜ |
-| F13.4 | Component tests for login form, register form | `test(fe): auth form component tests` | ⬜ |
-| F13.5 | Component tests for interview config, answer input | `test(fe): interview component tests` | ⬜ |
-| F13.6 | Set up Playwright for E2E tests | `chore(fe): configure playwright` | ⬜ |
-| F13.7 | E2E test: register → verify → login → dashboard | `test(fe): auth e2e test` | ⬜ |
-| F13.8 | E2E test: upload resume → view analysis | `test(fe): resume e2e test` | ⬜ |
-| F13.9 | E2E test: start interview → answer → summary | `test(fe): interview e2e test` | ⬜ |
+| F13.1 | Set up Vitest + React Testing Library | `chore(fe): configure vitest` | ✅ |
+| F13.2 | Unit tests for auth store (login, logout, token refresh) | `test(fe): auth store unit tests` | ✅ |
+| F13.3 | Unit tests for interview store (state machine transitions) | `test(fe): interview store unit tests` | ✅ |
+| F13.4 | Component tests for login form, register form | `test(fe): auth form component tests` | ✅ |
+| F13.5 | Component tests for interview config, answer input | `test(fe): interview component tests` | ✅ |
+| F13.6 | Set up Playwright for E2E tests | `chore(fe): configure playwright` | ✅ |
+| F13.7 | E2E test: register → verify → login → dashboard | `test(fe): auth e2e test` | ✅ |
+| F13.8 | E2E test: upload resume → view analysis | `test(fe): resume e2e test` | ✅ |
+| F13.9 | E2E test: start interview → answer → summary | `test(fe): interview e2e test` | ✅ |
 
 **Checkpoint:** Core flows have test coverage. CI can run frontend tests.
 
@@ -256,11 +256,11 @@
 
 | # | Task | Commit Message | Status |
 |---|------|---------------|--------|
-| F14.1 | Add frontend to GitHub Actions CI: `pnpm lint`, `pnpm build`, `pnpm test` | `ci(fe): add frontend to CI pipeline` | ⬜ |
-| F14.2 | Create `frontend/Dockerfile` — multi-stage build (deps → build → production) | `chore(fe): add Dockerfile` | ⬜ |
-| F14.3 | Update root `docker-compose.yml` — add frontend service | `chore: add frontend to docker-compose` | ⬜ |
-| F14.4 | Create Vercel deployment config (`vercel.json`) as alternative to Docker | `chore(fe): add vercel config` | ⬜ |
-| F14.5 | Set up environment variable documentation for deployment | `docs(fe): deployment environment variables` | ⬜ |
+| F14.1 | Add frontend to GitHub Actions CI: `pnpm lint`, `pnpm build`, `pnpm test` | `ci(fe): add frontend to CI pipeline` | ✅ |
+| F14.2 | Create `frontend/Dockerfile` — multi-stage build (deps → build → production) | `chore(fe): add Dockerfile` | ✅ |
+| F14.3 | Update root `docker-compose.yml` — add frontend service | `chore: add frontend to docker-compose` | ✅ |
+| F14.4 | Create Vercel deployment config (`vercel.json`) as alternative to Docker | `chore(fe): add vercel config` | ✅ |
+| F14.5 | Set up environment variable documentation for deployment | `docs(fe): deployment environment variables` | ✅ |
 
 **Checkpoint:** Frontend builds in CI. Deployable via Docker or Vercel.
 
@@ -279,12 +279,12 @@
 | F6 | Auth Pages | 9 | ✅ |
 | F7 | Dashboard Page | 5 | ✅ |
 | F8 | Resume Module | 10 | ✅ |
-| F9 | Interview Module | 13 | ⬜ |
-| F10 | Profile & Settings | 3 | ⬜ |
-| F11 | Admin Panel | 4 | ⬜ |
-| F12 | Charts & Analytics | 4 | ⬜ |
-| F13 | Testing | 9 | ⬜ |
-| F14 | CI/CD & Deployment | 5 | ⬜ |
+| F9 | Interview Module | 13 | ✅ |
+| F10 | Profile & Settings | 3 | ✅ |
+| F11 | Admin Panel | 4 | ✅ |
+| F12 | Charts & Analytics | 4 | ✅ |
+| F13 | Testing | 9 | ✅ |
+| F14 | CI/CD & Deployment | 5 | ✅ |
 | **TOTAL** | | **110** | |
 
 ---
