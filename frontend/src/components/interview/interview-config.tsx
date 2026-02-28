@@ -59,10 +59,12 @@ export function InterviewConfig({ onSubmit, isLoading }: InterviewConfigProps) {
   const analyzedResumes = resumeData?.items?.filter((r) => r.status === "analyzed");
 
   return (
-    <Card className="mx-auto w-full max-w-2xl">
+    <Card className="mx-auto w-full max-w-2xl border-zinc-200/80 shadow-lg dark:border-zinc-800/80">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/40">
+            <Brain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
           Configure Your Interview
         </CardTitle>
         <CardDescription>
@@ -177,7 +179,7 @@ export function InterviewConfig({ onSubmit, isLoading }: InterviewConfigProps) {
             />
 
             {/* Submit */}
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <Button type="submit" className="bg-gradient-brand w-full rounded-xl shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

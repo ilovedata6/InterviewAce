@@ -76,7 +76,7 @@ export function AnswerInput({ onSubmit, isSubmitting, answerStartTime }: AnswerI
               <FormControl>
                 <Textarea
                   placeholder="Type your answer here…"
-                  className="min-h-[160px] resize-y"
+                  className="min-h-[180px] resize-y rounded-xl border-zinc-200/80 bg-zinc-50/50 transition-colors focus-visible:bg-white dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:focus-visible:bg-zinc-950"
                   disabled={isSubmitting}
                   {...field}
                 />
@@ -99,7 +99,7 @@ export function AnswerInput({ onSubmit, isSubmitting, answerStartTime }: AnswerI
           </div>
 
           {/* Right: submit button */}
-          <Button type="submit" disabled={isSubmitting || !answerText?.trim()}>
+          <Button type="submit" disabled={isSubmitting || !answerText?.trim()} className="bg-gradient-brand rounded-xl shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
