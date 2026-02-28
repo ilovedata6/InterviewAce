@@ -7,35 +7,36 @@ import type { InterviewSession, Question, InterviewSummary } from "@/types/inter
 
 const mockSession: InterviewSession = {
   id: "sess-1",
+  user_id: "user-1",
   resume_id: "res-1",
   difficulty: "intermediate",
   question_count: 5,
-  categories: ["javascript", "react"],
-  status: "in_progress",
+  focus_areas: ["javascript", "react"],
   started_at: "2024-06-01T10:00:00Z",
+  completed_at: null,
+  final_score: null,
+  feedback_summary: null,
+  score_breakdown: null,
 };
 
 const mockQuestion: Question = {
-  id: "q-1",
+  question_id: "q-1",
   question_text: "What is a closure?",
   category: "javascript",
   difficulty: "intermediate",
-  question_number: 1,
+  order_index: 1,
 };
 
 const mockSummary: InterviewSummary = {
   session_id: "sess-1",
-  overall_score: 85,
-  total_questions: 5,
-  questions_answered: 5,
-  duration_seconds: 600,
-  difficulty: "intermediate",
-  categories: ["javascript", "react"],
-  category_scores: { javascript: 90, react: 80 },
+  final_score: 85,
+  feedback_summary: "Good performance overall",
+  question_feedback: [
+    { question_id: "q-1", evaluation_score: 85, feedback_comment: "Good understanding of closures" },
+  ],
+  score_breakdown: { javascript: 90, react: 80 },
   strengths: ["Good understanding of closures"],
-  improvements: ["Need more practice with hooks"],
-  started_at: "2024-06-01T10:00:00Z",
-  completed_at: "2024-06-01T10:10:00Z",
+  weaknesses: ["Need more practice with hooks"],
 };
 
 describe("useInterviewStore", () => {
@@ -228,7 +229,7 @@ describe("useInterviewStore", () => {
       // Summary received
       store.getState().setSummary(mockSummary);
       expect(store.getState().state).toBe("summary");
-      expect(store.getState().summary?.overall_score).toBe(85);
+      expect(store.getState().summary?.final_score).toBe(85);
     });
   });
 });

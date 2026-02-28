@@ -1,6 +1,7 @@
 /* ──────────────────────────────────────────────────────────
  * Test setup — loaded before every test file
  * ────────────────────────────────────────────────────────── */
+import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 // Stub next/navigation
