@@ -102,7 +102,7 @@ async def admin_list_users(
                 "full_name": u.full_name,
                 "role": u.role,
                 "is_active": u.is_active,
-                "is_verified": u.is_verified,
+                "is_verified": u.is_email_verified,
                 "created_at": u.created_at.isoformat() if u.created_at else None,
                 "interview_count": interview_cnt.scalar(),
                 "resume_count": resume_cnt.scalar(),
@@ -136,7 +136,7 @@ async def admin_get_user(
         "full_name": user.full_name,
         "role": user.role,
         "is_active": user.is_active,
-        "is_verified": user.is_verified,
+        "is_verified": user.is_email_verified,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None,
     }
