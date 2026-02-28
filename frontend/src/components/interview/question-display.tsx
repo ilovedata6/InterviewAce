@@ -24,26 +24,29 @@ const difficultyColor: Record<string, string> = {
 
 export function QuestionDisplay({ question, totalQuestions }: QuestionDisplayProps) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="animate-fade-in-up overflow-hidden border-zinc-200/80 shadow-sm dark:border-zinc-800/80">
+      <CardHeader className="border-b border-zinc-100 bg-zinc-50/50 pb-3 dark:border-zinc-800/50 dark:bg-zinc-900/30">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-sm font-medium">
-            Question {question.order_index + 1} of {totalQuestions}
+          <span className="text-muted-foreground text-sm font-semibold">
+            Question {question.order_index + 1}
+            <span className="font-normal"> of {totalQuestions}</span>
           </span>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">
+            <Badge variant="outline" className="rounded-lg capitalize">
               {question.category.replace("_", " ")}
             </Badge>
-            <Badge variant="secondary" className={difficultyColor[question.difficulty] ?? ""}>
+            <Badge variant="secondary" className={`rounded-lg ${difficultyColor[question.difficulty] ?? ""}`}>
               {question.difficulty}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-5">
         <div className="flex gap-3">
           <div className="mt-1 flex-shrink-0">
-            <MessageSquare className="text-primary h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40">
+              <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
           <p className="text-lg leading-relaxed">{question.question_text}</p>
         </div>

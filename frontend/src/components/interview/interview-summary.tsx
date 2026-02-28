@@ -31,14 +31,16 @@ export function InterviewSummaryDisplay({ summary }: InterviewSummaryDisplayProp
   return (
     <div className="space-y-6">
       {/* Overall Score */}
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-8">
-          <Trophy className="text-primary h-12 w-12" />
-          <div className={`text-5xl font-bold ${scoreColor(summary.final_score)}`}>
-            {summary.final_score}
-            <span className="text-muted-foreground text-2xl">/100</span>
+      <Card className="overflow-hidden">
+        <CardContent className="flex flex-col items-center gap-4 py-10">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 shadow-sm dark:from-amber-900/40 dark:to-amber-950/20">
+            <Trophy className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="text-muted-foreground max-w-md text-center">{summary.feedback_summary}</p>
+          <div className={`text-6xl font-extrabold tracking-tight ${scoreColor(summary.final_score)}`}>
+            {summary.final_score}
+            <span className="text-muted-foreground text-2xl font-normal">/100</span>
+          </div>
+          <p className="text-muted-foreground max-w-md text-center leading-relaxed">{summary.feedback_summary}</p>
         </CardContent>
       </Card>
 

@@ -22,20 +22,24 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardStats();
 
+  // Time-of-day greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Welcome back{user?.full_name ? `, ${user.full_name}` : ""}
+            {greeting}{user?.full_name ? `, ${user.full_name}` : ""} &#128075;
           </h1>
           <p className="text-muted-foreground">
             Here&apos;s an overview of your interview preparation progress.
           </p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching} className="rounded-lg">
           <RefreshCw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
           Refresh
         </Button>

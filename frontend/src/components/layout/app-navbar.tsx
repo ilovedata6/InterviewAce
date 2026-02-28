@@ -33,7 +33,7 @@ function getInitials(name: string): string {
 
 export function AppNavbar({ user, onToggleSidebar, onLogout }: AppNavbarProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-4 lg:px-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <header className="flex h-16 items-center justify-between border-b border-zinc-200/70 bg-white/80 px-4 backdrop-blur-lg lg:px-6 dark:border-zinc-800/70 dark:bg-zinc-950/80">
       {/* Mobile menu toggle */}
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onToggleSidebar}>
         <Menu className="h-5 w-5" />
@@ -46,9 +46,9 @@ export function AppNavbar({ user, onToggleSidebar, onLogout }: AppNavbarProps) {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+          <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-transparent transition-all hover:ring-blue-200 dark:hover:ring-blue-900">
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-50 text-sm font-semibold text-blue-700 dark:from-blue-900 dark:to-blue-950 dark:text-blue-300">
                 {user ? getInitials(user.full_name) : "?"}
               </AvatarFallback>
             </Avatar>
