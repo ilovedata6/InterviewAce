@@ -78,7 +78,7 @@ class LLMProviderWithFallback(ILLMProvider):
     # ILLMProvider interface
     # ------------------------------------------------------------------
 
-    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[dict[str, str] | str]:
         return self._call_with_fallback("generate_questions", prompts)
 
     def generate_feedback(self, prompts: dict[str, str]) -> dict[str, Any]:

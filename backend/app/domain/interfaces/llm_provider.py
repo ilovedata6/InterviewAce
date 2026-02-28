@@ -20,7 +20,7 @@ class ILLMProvider(ABC):
         ...
 
     @abstractmethod
-    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[dict[str, str] | str]:
         """
         Generate interview questions from the given prompts.
 
@@ -28,7 +28,8 @@ class ILLMProvider(ABC):
             prompts: Dict with keys ``system_prompt`` and ``user_prompt``.
 
         Returns:
-            List of question strings.
+            List of question dicts (with keys: question, type, difficulty)
+            or plain strings as fallback.
         """
         ...
 

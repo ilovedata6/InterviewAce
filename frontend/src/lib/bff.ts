@@ -100,7 +100,12 @@ export async function backendFetch<T = unknown>(
     }
   }
 
-  let res = await fetch(url, { method, headers: reqHeaders, body: reqBody });
+  let res = await fetch(url, {
+    method,
+    headers: reqHeaders,
+    body: reqBody,
+    signal: AbortSignal.timeout(120_000), // 2 min timeout for LLM-heavy endpoints
+  });
 
   // If unauthorized, try refreshing the token
   if (res.status === 401 && !noAuth) {
@@ -110,7 +115,12 @@ export async function backendFetch<T = unknown>(
       if (newToken) {
         reqHeaders["Authorization"] = `Bearer ${newToken}`;
       }
-      res = await fetch(url, { method, headers: reqHeaders, body: reqBody });
+      res = await fetch(url, {
+        method,
+        headers: reqHeaders,
+        body: reqBody,
+        signal: AbortSignal.timeout(120_000),
+      });
     }
   }
 

@@ -175,6 +175,12 @@ class InterviewRepository(IInterviewRepository):
         await self._db.refresh(model)
         return self._question_to_entity(model)
 
+    async def add_questions_batch(self, entities: list[InterviewQuestionEntity]) -> None:
+        """Persist multiple questions in a single transaction."""
+        models = [self._question_to_model(e) for e in entities]
+        self._db.add_all(models)
+        await self._db.commit()
+
     async def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
         result = await self._db.execute(
             select(InterviewQuestion).where(InterviewQuestion.id == entity.id)
