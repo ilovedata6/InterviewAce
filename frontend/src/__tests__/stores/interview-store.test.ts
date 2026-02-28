@@ -32,7 +32,11 @@ const mockSummary: InterviewSummary = {
   final_score: 85,
   feedback_summary: "Good performance overall",
   question_feedback: [
-    { question_id: "q-1", evaluation_score: 85, feedback_comment: "Good understanding of closures" },
+    {
+      question_id: "q-1",
+      evaluation_score: 85,
+      feedback_comment: "Good understanding of closures",
+    },
   ],
   score_breakdown: { javascript: 90, react: 80 },
   strengths: ["Good understanding of closures"],
