@@ -75,7 +75,8 @@ async def _sync_parse_fallback(file_path: str, resume_id: str) -> None:
         resume.confidence_score = float(parsed["confidence_score"]) if parsed.get("confidence_score") is not None else None  # type: ignore[assignment]
         resume.processing_time = float(parsed["processing_time"]) if parsed.get("processing_time") is not None else None  # type: ignore[assignment]
         resume.title = parsed.get("name") or os.path.basename(file_path)  # type: ignore[assignment]
-        resume.description = parsed.get("summary")  # type: ignore[assignment]
+        _summary = parsed.get("summary") or ""
+        resume.description = _summary[:2000] if _summary else None  # type: ignore[assignment]
         db.commit()
         logger.info("sync_parse_fallback_completed", resume_id=resume_id)
 
