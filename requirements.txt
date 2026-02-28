@@ -10,6 +10,7 @@ click==8.1.8
 colorama==0.4.6
 cryptography==44.0.2
 ecdsa==0.19.1
+email-validator>=2.1.0
 fastapi==0.109.2
 google-genai>=1.0.0
 greenlet==3.2.1
