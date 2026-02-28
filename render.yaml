@@ -1,0 +1,98 @@
+# ──────────────────────────────────────────────────────────
+# Render Blueprint — InterviewAce Backend Services
+# ──────────────────────────────────────────────────────────
+# Deploy with: https://render.com/deploy → connect your GitHub repo
+# This file auto-configures both web service + Celery worker.
+# ──────────────────────────────────────────────────────────
+
+services:
+  # ── FastAPI Backend (Web Service) ────────────────────────
+  - type: web
+    name: interviewace-api
+    runtime: docker
+    repo: https://github.com/ilovedata6/InterviewAce.git
+    branch: main
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # ── Security ──────────────────────────────────────────
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      # ── Database (Neon PostgreSQL) ────────────────────────
+      - key: DATABASE_URL
+        sync: false  # set manually after creating Neon DB
+      - key: POSTGRES_SERVER
+        value: ""  # not used when DATABASE_URL is set
+      - key: POSTGRES_USER
+        value: ""
+      - key: POSTGRES_PASSWORD
+        value: ""
+      - key: POSTGRES_DB
+        value: ""
+      # ── Redis (Upstash) ──────────────────────────────────
+      - key: REDIS_URL
+        sync: false  # set manually after creating Upstash Redis
+      # ── LLM APIs ─────────────────────────────────────────
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      # ── CORS — Vercel frontend URL ───────────────────────
+      - key: ALLOWED_ORIGINS
+        sync: false  # set to your Vercel URL after deploying frontend
+      # ── Frontend URL (for email links) ───────────────────
+      - key: FRONTEND_URL
+        sync: false
+      # ── SMTP (optional) ──────────────────────────────────
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_DEV_MODE
+        value: "false"
+
+  # ── Celery Worker (Background Worker) ────────────────────
+  - type: worker
+    name: interviewace-worker
+    runtime: docker
+    repo: https://github.com/ilovedata6/InterviewAce.git
+    branch: main
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    dockerCommand: celery -A app.infrastructure.tasks.celery_app worker --loglevel=info --pool=solo --concurrency=1
+    envVars:
+      # Worker shares the same env vars as the API
+      - key: SECRET_KEY
+        fromService:
+          name: interviewace-api
+          type: web
+          envVarKey: SECRET_KEY
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
