@@ -154,6 +154,11 @@ class IInterviewRepository(ABC):
         ...
 
     @abstractmethod
+    async def add_questions_batch(self, entities: list[InterviewQuestionEntity]) -> None:
+        """Persist multiple interview questions in a single transaction."""
+        ...
+
+    @abstractmethod
     async def update_question(self, entity: InterviewQuestionEntity) -> InterviewQuestionEntity:
         """Update an existing interview question."""
         ...

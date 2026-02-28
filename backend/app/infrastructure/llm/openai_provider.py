@@ -77,12 +77,13 @@ class OpenAIProvider(ILLMProvider):
     def provider_name(self) -> str:
         return "OpenAI"
 
-    def generate_questions(self, prompts: dict[str, str]) -> list[str]:
+    def generate_questions(self, prompts: dict[str, str]) -> list[dict[str, str] | str]:
         """
         Generate interview questions using OpenAI JSON mode.
 
         Expects ``prompts`` with keys ``system_prompt`` and ``user_prompt``.
-        Returns a list of question strings.
+        Returns a list of dicts with keys: question, type, difficulty.
+        Falls back to plain strings if LLM returns unstructured items.
         """
         try:
             response = self._call_with_timeout_retry(
@@ -100,17 +101,17 @@ class OpenAIProvider(ILLMProvider):
             # Accept both {"questions": [...]} and top-level [...]
             questions_list = data if isinstance(data, list) else data.get("questions", [])
 
-            question_texts: list[str] = []
+            results: list[dict[str, str] | str] = []
             for item in questions_list:
                 if isinstance(item, dict) and "question" in item:
-                    question_texts.append(item["question"])
+                    results.append(item)  # preserve type/difficulty metadata
                 elif isinstance(item, str):
-                    question_texts.append(item)
+                    results.append(item)
                 else:
                     logger.warning("unexpected_question_item", item=repr(item))
 
-            logger.info("openai_questions_generated", count=len(question_texts), model=self._model)
-            return question_texts
+            logger.info("openai_questions_generated", count=len(results), model=self._model)
+            return results
 
         except (APIError, APITimeoutError, RateLimitError) as exc:
             logger.error("openai_api_error", method="generate_questions", error=str(exc))

@@ -40,7 +40,7 @@ export default function AdminUsersPage() {
   const handleToggleActive = async (userId: string, action: "activate" | "deactivate") => {
     setTogglingId(userId);
     try {
-      await apiClient.put(`${API_ROUTES.ADMIN.USERS}/${userId}?action=${action}`);
+      await apiClient.patch(`${API_ROUTES.ADMIN.USERS}/${userId}?action=${action}`);
       toast.success(`User ${action}d successfully`);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     } catch (error) {

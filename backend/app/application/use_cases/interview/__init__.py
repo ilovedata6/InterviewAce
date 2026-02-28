@@ -7,6 +7,7 @@ the LLM provider interface, and domain entities.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -91,6 +92,8 @@ class StartInterviewUseCase:
         saved_session = await self._interview_repo.create_session(session_entity)
 
         # 3. Build resume context & generate questions via LLM
+        #    Run the synchronous/blocking LLM call in a thread so we
+        #    don't freeze the async event loop.
         resume_context = self._build_resume_context(resume)
         prompt = self._build_prompt(
             resume_context,
@@ -99,7 +102,9 @@ class StartInterviewUseCase:
             focus_areas=dto.focus_areas,
         )
         try:
-            raw_questions = self._llm_provider.generate_questions(prompt)
+            raw_questions = await asyncio.to_thread(
+                self._llm_provider.generate_questions, prompt
+            )
             logger.info(
                 "questions_generated",
                 session_id=str(saved_session.id),
@@ -109,9 +114,10 @@ class StartInterviewUseCase:
             logger.error("llm_call_failed", session_id=str(saved_session.id), error=str(e))
             raise InterviewError("Failed to generate questions") from e
 
-        # 4. Persist questions with metadata
+        # 4. Persist questions with metadata (batch — single transaction)
+        q_entities: list[InterviewQuestionEntity] = []
         for idx, q_data in enumerate(raw_questions):
-            # Support both plain string and dict from LLM
+            # Support both dict (with metadata) and plain string from LLM
             if isinstance(q_data, dict):
                 q_text = q_data.get("question", str(q_data))
                 q_category = q_data.get("type", "general")
@@ -123,14 +129,17 @@ class StartInterviewUseCase:
                 q_category = "general"
                 q_difficulty = dto.difficulty if dto.difficulty != "mixed" else "medium"
 
-            q_entity = InterviewQuestionEntity(
-                session_id=saved_session.id,
-                question_text=q_text,
-                category=q_category,
-                difficulty=q_difficulty,
-                order_index=idx,
+            q_entities.append(
+                InterviewQuestionEntity(
+                    session_id=saved_session.id,
+                    question_text=q_text,
+                    category=q_category,
+                    difficulty=q_difficulty,
+                    order_index=idx,
+                )
             )
-            await self._interview_repo.add_question(q_entity)
+
+        await self._interview_repo.add_questions_batch(q_entities)
 
         # Return the session (with questions attached)
         return await self._interview_repo.get_session_by_id(saved_session.id)  # type: ignore
@@ -163,10 +172,15 @@ class StartInterviewUseCase:
         if not isinstance(skills, list):
             skills = []
         projects = (ctx.get("projects") or [])[:4]
-        project_details = "\n".join(f"Projects: {p['description']}" for p in projects)
+        project_details = "\n".join(f"  - {p['description']}" for p in projects)
 
         difficulty_instruction = ""
-        if difficulty != "mixed":
+        if difficulty == "mixed":
+            difficulty_instruction = (
+                "Use a mix of easy, medium, and hard questions. "
+                "Distribute roughly: 30% easy, 40% medium, 30% hard.\n"
+            )
+        else:
             difficulty_instruction = (
                 f"All questions should be at **{difficulty}** difficulty level.\n"
             )
@@ -176,26 +190,36 @@ class StartInterviewUseCase:
             focus_instruction = f"Focus the questions on these areas: {', '.join(focus_areas)}.\n"
 
         system_prompt = (
-            "You are an expert technical interviewer. "
-            "Your job is to generate a list of high-quality, on-point interview questions "
-            "that test a candidate's skills, professional experience, and past projects. "
-            "Always respond with valid JSON only."
+            "You are an expert technical interviewer conducting a real interview. "
+            "Generate precise, focused interview questions that test a candidate's "
+            "actual skills and experience. Always respond with valid JSON only."
         )
         user_prompt = (
             f"Candidate Profile:\n"
-            f"- Role: {ctx.get('inferred_role')}\n"
-            f"- Years of Experience: {ctx.get('years_of_experience')}\n"
-            f"- Skills: {', '.join(skills)}\n"
-            f"- Projects:\n{project_details}\n\n"
-            f"{difficulty_instruction}"
+            f"- Target Role: {ctx.get('inferred_role') or 'Software Engineer'}\n"
+            f"- Years of Experience: {ctx.get('years_of_experience') or 'Unknown'}\n"
+            f"- Key Skills: {', '.join(skills[:15]) if skills else 'Not specified'}\n"
+        )
+        if project_details:
+            user_prompt += f"- Notable Projects:\n{project_details}\n"
+
+        user_prompt += (
+            f"\n{difficulty_instruction}"
             f"{focus_instruction}"
-            "OUTPUT FORMAT:\n"
-            "- Return a JSON array of objects, each with:\n"
-            '    { "type": "technical|behavioral|project|system_design|coding", '
-            '"question": string, "difficulty": "easy|medium|hard" }\n'
-            f"- Total questions: {question_count}\n"
-            "- No additional text, no markdown, no code fences.\n\n"
-            "Now generate the questions."
+            "\nQUESTION GUIDELINES:\n"
+            "- Keep questions concise and direct (1-2 sentences max).\n"
+            "- Only scenario-based or system_design questions may be longer (up to 3-4 sentences) "
+            "to set up proper context.\n"
+            "- Ask about specific technologies from the candidate's skill set.\n"
+            "- Include questions referencing their actual project experience.\n"
+            "- Avoid generic filler questions — every question should be purposeful.\n"
+            "- Mix question types: technical, behavioral, project-based, system_design, and coding.\n"
+            "\nOUTPUT FORMAT:\n"
+            "Return a JSON object with a \"questions\" array. Each element:\n"
+            '  { "type": "technical|behavioral|project|system_design|coding", '
+            '"question": "<concise question text>", "difficulty": "easy|medium|hard" }\n'
+            f"\nTotal questions: {question_count}\n"
+            "No additional text, no markdown, no code fences — ONLY the JSON object."
         )
         return {"system_prompt": system_prompt, "user_prompt": user_prompt}
 
@@ -316,7 +340,9 @@ class CompleteInterviewUseCase:
         }
 
         try:
-            llm_response = self._llm_provider.generate_feedback(prompt)
+            llm_response = await asyncio.to_thread(
+                self._llm_provider.generate_feedback, prompt
+            )
         except Exception as e:
             raise InterviewError(f"LLM evaluation failed: {e}") from e
 

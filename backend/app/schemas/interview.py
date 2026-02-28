@@ -77,6 +77,7 @@ class InterviewSessionInDB(BaseModel):
     question_count: int = 12
     focus_areas: list[str] | None = None
     score_breakdown: dict[str, Any] | None = None
+    questions: list[InterviewQuestionInDB] = []
 
     class Config:
         from_attributes = True

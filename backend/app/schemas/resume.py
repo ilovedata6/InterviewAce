@@ -81,6 +81,10 @@ class ResumeAnalysis(BaseModel):
 
 
 class ResumeInDB(ResumeBase):
+    # Override the inherited 500-char cap — the LLM-generated description
+    # stored in the DB (Text column) can legitimately be longer.
+    description: str | None = Field(None, max_length=2000)
+
     id: UUID | str
     user_id: UUID | str
     file_path: str
