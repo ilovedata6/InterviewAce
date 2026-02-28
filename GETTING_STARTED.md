@@ -181,7 +181,7 @@ You need **4 processes** running simultaneously in separate terminals:
 | 1 | PostgreSQL | —          | Running as a service / `pg_ctl start`   |
 | 2 | Redis    | —            | `redis-server` or running as a service  |
 | 3 | Backend  | `backend/`   | `uvicorn main:app --reload --port 8000` |
-| 4 | Celery   | `backend/`   | `celery -A app.infrastructure.tasks.celery_app worker --loglevel=info` |
+| 4 | Celery   | `backend/`   | `celery -A app.infrastructure.tasks.celery_app worker --loglevel=info --pool=threads` |
 | 5 | Frontend | `frontend/`  | `pnpm dev`                              |
 
 **Quick start order:**
