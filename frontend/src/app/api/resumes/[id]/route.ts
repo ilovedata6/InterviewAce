@@ -4,7 +4,7 @@
  * DELETE /api/resumes/[id] → FastAPI DELETE /resume/{id}
  */
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { backendFetch, proxyResponse } from "@/lib/bff";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

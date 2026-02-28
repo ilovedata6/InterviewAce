@@ -102,9 +102,7 @@ class StartInterviewUseCase:
             focus_areas=dto.focus_areas,
         )
         try:
-            raw_questions = await asyncio.to_thread(
-                self._llm_provider.generate_questions, prompt
-            )
+            raw_questions = await asyncio.to_thread(self._llm_provider.generate_questions, prompt)
             logger.info(
                 "questions_generated",
                 session_id=str(saved_session.id),
@@ -215,7 +213,7 @@ class StartInterviewUseCase:
             "- Avoid generic filler questions — every question should be purposeful.\n"
             "- Mix question types: technical, behavioral, project-based, system_design, and coding.\n"
             "\nOUTPUT FORMAT:\n"
-            "Return a JSON object with a \"questions\" array. Each element:\n"
+            'Return a JSON object with a "questions" array. Each element:\n'
             '  { "type": "technical|behavioral|project|system_design|coding", '
             '"question": "<concise question text>", "difficulty": "easy|medium|hard" }\n'
             f"\nTotal questions: {question_count}\n"
@@ -340,9 +338,7 @@ class CompleteInterviewUseCase:
         }
 
         try:
-            llm_response = await asyncio.to_thread(
-                self._llm_provider.generate_feedback, prompt
-            )
+            llm_response = await asyncio.to_thread(self._llm_provider.generate_feedback, prompt)
         except Exception as e:
             raise InterviewError(f"LLM evaluation failed: {e}") from e
 

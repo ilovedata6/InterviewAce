@@ -40,9 +40,7 @@ async def admin_stats(
     resumes, and conversion metrics."""
 
     user_count = await db.execute(select(func.count(User.id)))
-    active_count = await db.execute(
-        select(func.count(User.id)).where(User.is_active.is_(True))
-    )
+    active_count = await db.execute(select(func.count(User.id)).where(User.is_active.is_(True)))
     interview_count = await db.execute(select(func.count(InterviewSession.id)))
     completed_count = await db.execute(
         select(func.count(InterviewSession.id)).where(InterviewSession.completed_at.isnot(None))
@@ -223,4 +221,3 @@ async def admin_change_role(
     user.role = body.role.value  # type: ignore[assignment]
     await db.commit()
     return {"detail": f"User {user_id} role changed to {body.role.value}."}
-

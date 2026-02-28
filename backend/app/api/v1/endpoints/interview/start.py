@@ -55,8 +55,7 @@ async def start_interview_session(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
-                "AI question generation temporarily unavailable. "
-                "Please try again in a few seconds."
+                "AI question generation temporarily unavailable. Please try again in a few seconds."
             ),
         ) from e
     return session

@@ -15,7 +15,7 @@
  * ────────────────────────────────────────────────────────── */
 
 import { create } from "zustand";
-import { apiClient, ApiClientError } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 import { API_ROUTES } from "@/lib/constants";
 import type { User, LoginRequest, RegisterRequest } from "@/types/auth";
 import type { MessageResponse } from "@/types/common";
@@ -56,7 +56,7 @@ const INITIAL_STATE = {
 
 /* ── Store ── */
 
-export const useAuthStore = create<AuthState>()((set, get) => ({
+export const useAuthStore = create<AuthState>()((set) => ({
   ...INITIAL_STATE,
 
   fetchUser: async () => {
