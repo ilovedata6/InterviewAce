@@ -94,6 +94,17 @@ export const apiClient = {
     return handleResponse<T>(res);
   },
 
+  /** PATCH request (JSON body) */
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(path, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      credentials: "include",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return handleResponse<T>(res);
+  },
+
   /** DELETE request */
   async del<T = void>(path: string): Promise<T> {
     const res = await fetch(path, {
