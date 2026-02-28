@@ -25,7 +25,10 @@ export default function Home() {
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
+              Interview
+              <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">
+                Ace
+              </span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -54,7 +57,7 @@ export default function Home() {
           <div className="animate-pulse-soft absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/3 blur-3xl dark:bg-indigo-500/5" />
         </div>
 
-        <div className="relative mx-auto max-w-3xl space-y-8 animate-fade-in-up">
+        <div className="animate-fade-in-up relative mx-auto max-w-3xl space-y-8">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/80 px-4 py-1.5 text-sm font-medium text-blue-700 shadow-sm backdrop-blur dark:border-blue-800/60 dark:bg-blue-950/50 dark:text-blue-300">
             <Sparkles className="h-3.5 w-3.5" />
@@ -114,7 +117,7 @@ export default function Home() {
 
       {/* ── Stats bar ── */}
       <section className="border-y border-zinc-200/60 bg-white/50 backdrop-blur dark:border-zinc-800/60 dark:bg-zinc-900/50">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-zinc-200/60 dark:divide-zinc-800/60 sm:grid-cols-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-zinc-200/60 sm:grid-cols-4 dark:divide-zinc-800/60">
           {[
             { label: "AI Models", value: "2", icon: BrainCircuit },
             { label: "Question Types", value: "3", icon: Target },
@@ -157,8 +160,9 @@ export default function Home() {
                   AI Mock Interviews
                 </h3>
                 <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  Get personalized interview questions based on your resume and target role. Practice
-                  behavioral, technical, and situational questions with real-time AI feedback.
+                  Get personalized interview questions based on your resume and target role.
+                  Practice behavioral, technical, and situational questions with real-time AI
+                  feedback.
                 </p>
               </div>
             </div>
@@ -246,7 +250,9 @@ export default function Home() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                   <Icon className={`h-7 w-7 ${color}`} />
                 </div>
-                <span className={`mb-2 inline-block rounded-full ${bg} px-3 py-0.5 text-xs font-bold ${color}`}>
+                <span
+                  className={`mb-2 inline-block rounded-full ${bg} px-3 py-0.5 text-xs font-bold ${color}`}
+                >
                   {step}
                 </span>
                 <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -278,12 +284,14 @@ export default function Home() {
               {
                 icon: BrainCircuit,
                 title: "Dual AI Engine",
-                description: "OpenAI GPT-5.2 primary with Gemini 2.0 fallback. Always available, always smart.",
+                description:
+                  "OpenAI GPT-5.2 primary with Gemini 2.0 fallback. Always available, always smart.",
               },
               {
                 icon: Target,
                 title: "Personalized Questions",
-                description: "Questions are generated from YOUR resume — skills, projects, and experience.",
+                description:
+                  "Questions are generated from YOUR resume — skills, projects, and experience.",
               },
               {
                 icon: Clock,
@@ -293,12 +301,14 @@ export default function Home() {
               {
                 icon: BarChart3,
                 title: "Visual Analytics",
-                description: "Score trends, skill radar charts, and category breakdowns at a glance.",
+                description:
+                  "Score trends, skill radar charts, and category breakdowns at a glance.",
               },
               {
                 icon: Shield,
                 title: "Secure & Private",
-                description: "JWT auth, encrypted passwords, rate limiting, and role-based access control.",
+                description:
+                  "JWT auth, encrypted passwords, rate limiting, and role-based access control.",
               },
               {
                 icon: Users,
@@ -314,8 +324,12 @@ export default function Home() {
                   <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
-                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{description}</p>
+                  <h3 className="mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -335,8 +349,8 @@ export default function Home() {
               Ready to Ace Your Interview?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-blue-100">
-              Join users who have improved their interview skills with AI-powered practice.
-              Start your free session today — no credit card required.
+              Join users who have improved their interview skills with AI-powered practice. Start
+              your free session today — no credit card required.
             </p>
             <Link
               href="/register"
@@ -357,14 +371,23 @@ export default function Home() {
               <Sparkles className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
+              Interview
+              <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">
+                Ace
+              </span>
             </span>
           </div>
           <div className="flex gap-8 text-sm text-zinc-500 dark:text-zinc-400">
-            <Link href="/login" className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50">
+            <Link
+              href="/login"
+              className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
+            >
               Sign In
             </Link>
-            <Link href="/register" className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50">
+            <Link
+              href="/register"
+              className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
+            >
               Register
             </Link>
           </div>

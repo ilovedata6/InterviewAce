@@ -21,7 +21,11 @@ export function QuickActions() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row">
-        <Button asChild size="lg" className="flex-1 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110">
+        <Button
+          asChild
+          size="lg"
+          className="flex-1 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110"
+        >
           <Link href={ROUTES.INTERVIEW_START}>
             <Mic className="mr-2 h-4 w-4" />
             Start Interview

@@ -35,7 +35,10 @@ export function QuestionDisplay({ question, totalQuestions }: QuestionDisplayPro
             <Badge variant="outline" className="rounded-lg capitalize">
               {question.category.replace("_", " ")}
             </Badge>
-            <Badge variant="secondary" className={`rounded-lg ${difficultyColor[question.difficulty] ?? ""}`}>
+            <Badge
+              variant="secondary"
+              className={`rounded-lg ${difficultyColor[question.difficulty] ?? ""}`}
+            >
               {question.difficulty}
             </Badge>
           </div>

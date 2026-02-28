@@ -19,7 +19,7 @@ services:
     envVars:
       # ── Security ──────────────────────────────────────────
       - key: SECRET_KEY
-        generateValue: true
+        sync: false  # generate once: python -c "import secrets; print(secrets.token_hex(32))"
       - key: ENVIRONMENT
         value: production
       # ── Database (Neon PostgreSQL) ────────────────────────
@@ -76,12 +76,8 @@ services:
     plan: free
     dockerCommand: celery -A app.infrastructure.tasks.celery_app worker --loglevel=info --pool=solo --concurrency=1
     envVars:
-      # Worker shares the same env vars as the API
       - key: SECRET_KEY
-        fromService:
-          name: interviewace-api
-          type: web
-          envVarKey: SECRET_KEY
+        sync: false  # paste same value as interviewace-api SECRET_KEY
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
@@ -96,3 +92,5 @@ services:
         value: gpt-4o-mini
       - key: GEMINI_MODEL
         value: gemini-2.0-flash
+      - key: EMAIL_DEV_MODE
+        value: "true"

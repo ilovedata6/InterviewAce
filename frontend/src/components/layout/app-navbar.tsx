@@ -46,7 +46,10 @@ export function AppNavbar({ user, onToggleSidebar, onLogout }: AppNavbarProps) {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-transparent transition-all hover:ring-blue-200 dark:hover:ring-blue-900">
+          <Button
+            variant="ghost"
+            className="relative h-9 w-9 rounded-full ring-2 ring-transparent transition-all hover:ring-blue-200 dark:hover:ring-blue-900"
+          >
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-50 text-sm font-semibold text-blue-700 dark:from-blue-900 dark:to-blue-950 dark:text-blue-300">
                 {user ? getInitials(user.full_name) : "?"}

@@ -83,11 +83,16 @@ export function StatsCards({ data, isLoading }: StatsCardsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ key, title, icon: Icon, getValue, getSubtext, color, bgColor }) => (
-        <Card key={key} className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:hover:border-blue-900">
+        <Card
+          key={key}
+          className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:hover:border-blue-900"
+        >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 opacity-0 transition-opacity group-hover:opacity-100 dark:to-blue-950/20" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-muted-foreground text-sm font-medium">{title}</CardTitle>
-            <div className={`rounded-xl p-2.5 ${bgColor} transition-transform duration-300 group-hover:scale-110`}>
+            <div
+              className={`rounded-xl p-2.5 ${bgColor} transition-transform duration-300 group-hover:scale-110`}
+            >
               <Icon className={`h-4 w-4 ${color}`} />
             </div>
           </CardHeader>

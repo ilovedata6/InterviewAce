@@ -32,14 +32,21 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {greeting}{user?.full_name ? `, ${user.full_name}` : ""} &#128075;
+            {greeting}
+            {user?.full_name ? `, ${user.full_name}` : ""} &#128075;
           </h1>
           <p className="text-muted-foreground">
             Here&apos;s an overview of your interview preparation progress.
           </p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching} className="rounded-lg">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isRefetching}
+          className="rounded-lg"
+        >
           <RefreshCw className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
           Refresh
         </Button>

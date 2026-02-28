@@ -32,14 +32,14 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
           </Link>
 
           {/* Value proposition */}
-          <h2 className="mb-4 text-3xl font-bold leading-tight text-white xl:text-4xl">
+          <h2 className="mb-4 text-3xl leading-tight font-bold text-white xl:text-4xl">
             Practice smarter.
             <br />
             Interview better.
           </h2>
           <p className="mb-10 max-w-sm text-sm leading-relaxed text-blue-100/80">
-            AI-powered mock interviews tailored to your resume, with instant feedback and
-            progress tracking.
+            AI-powered mock interviews tailored to your resume, with instant feedback and progress
+            tracking.
           </p>
 
           {/* Feature list */}
@@ -61,7 +61,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
 
         {/* Bottom quote */}
         <div className="relative z-10 border-t border-white/10 p-12 xl:p-16">
-          <blockquote className="text-sm italic text-blue-100/70">
+          <blockquote className="text-sm text-blue-100/70 italic">
             &ldquo;The best preparation for tomorrow is doing your best today.&rdquo;
           </blockquote>
           <p className="mt-2 text-xs font-medium text-blue-200/50">— H. Jackson Brown Jr.</p>
@@ -70,7 +70,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
 
       {/* ── Right form panel ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8">
-        <div className="w-full max-w-md space-y-6 animate-fade-in">
+        <div className="animate-fade-in w-full max-w-md space-y-6">
           {/* Mobile logo (hidden on lg+) */}
           <div className="text-center lg:hidden">
             <Link href={ROUTES.HOME} className="inline-flex items-center gap-2">
@@ -78,7 +78,10 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
+                Interview
+                <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">
+                  Ace
+                </span>
               </span>
             </Link>
           </div>

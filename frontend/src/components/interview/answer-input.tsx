@@ -99,7 +99,11 @@ export function AnswerInput({ onSubmit, isSubmitting, answerStartTime }: AnswerI
           </div>
 
           {/* Right: submit button */}
-          <Button type="submit" disabled={isSubmitting || !answerText?.trim()} className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110">
+          <Button
+            type="submit"
+            disabled={isSubmitting || !answerText?.trim()}
+            className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

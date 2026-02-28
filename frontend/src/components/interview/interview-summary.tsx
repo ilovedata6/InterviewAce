@@ -36,11 +36,15 @@ export function InterviewSummaryDisplay({ summary }: InterviewSummaryDisplayProp
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 shadow-sm dark:from-amber-900/40 dark:to-amber-950/20">
             <Trophy className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className={`text-6xl font-extrabold tracking-tight ${scoreColor(summary.final_score)}`}>
+          <div
+            className={`text-6xl font-extrabold tracking-tight ${scoreColor(summary.final_score)}`}
+          >
             {summary.final_score}
             <span className="text-muted-foreground text-2xl font-normal">/100</span>
           </div>
-          <p className="text-muted-foreground max-w-md text-center leading-relaxed">{summary.feedback_summary}</p>
+          <p className="text-muted-foreground max-w-md text-center leading-relaxed">
+            {summary.feedback_summary}
+          </p>
         </CardContent>
       </Card>
 

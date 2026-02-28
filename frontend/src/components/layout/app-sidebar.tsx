@@ -66,7 +66,10 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
             <Sparkles className="h-4 w-4 text-white" />
           </div>
           <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
+            Interview
+            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">
+              Ace
+            </span>
           </span>
         </Link>
       </div>
@@ -89,7 +92,9 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
                   : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-50",
               )}
             >
-              <item.icon className={cn("h-[18px] w-[18px]", isActive && "text-blue-600 dark:text-blue-400")} />
+              <item.icon
+                className={cn("h-[18px] w-[18px]", isActive && "text-blue-600 dark:text-blue-400")}
+              />
               {item.title}
             </Link>
           );
@@ -117,7 +122,12 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-50",
                   )}
                 >
-                  <item.icon className={cn("h-[18px] w-[18px]", isActive && "text-blue-600 dark:text-blue-400")} />
+                  <item.icon
+                    className={cn(
+                      "h-[18px] w-[18px]",
+                      isActive && "text-blue-600 dark:text-blue-400",
+                    )}
+                  />
                   {item.title}
                 </Link>
               );
