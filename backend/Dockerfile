@@ -38,8 +38,8 @@ RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
 
 USER appuser
 
-# Default: run FastAPI via uvicorn
-# Override CMD in render.yaml for Celery worker
+# Render injects $PORT — default to 8000 for local Docker runs
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Use shell form so $PORT env var is expanded at runtime
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
