@@ -21,7 +21,7 @@ export default function RootError({
           {error.message || "An unexpected error occurred."}
         </p>
       </div>
-      <Button onClick={reset} className="bg-gradient-brand rounded-xl px-6 shadow-md hover:brightness-110">Try again</Button>
+      <Button onClick={reset} className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 px-6 shadow-md hover:brightness-110">Try again</Button>
     </div>
   );
 }

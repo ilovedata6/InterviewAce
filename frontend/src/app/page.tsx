@@ -18,14 +18,14 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 font-sans dark:bg-zinc-950">
       {/* ── Navbar ── */}
-      <nav className="glass sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 border-b border-zinc-200/50 bg-white/80 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-950/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-gradient-brand flex h-8 w-8 items-center justify-center rounded-lg">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Interview<span className="text-gradient">Ace</span>
+              Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -37,7 +37,7 @@ export default function Home() {
             </Link>
             <Link
               href="/register"
-              className="bg-gradient-brand rounded-lg px-4 py-2 text-sm font-medium text-white shadow-md transition-all hover:shadow-lg hover:brightness-110"
+              className="rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-md transition-all hover:shadow-lg hover:brightness-110"
             >
               Get Started
             </Link>
@@ -64,7 +64,7 @@ export default function Home() {
           {/* Heading */}
           <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl dark:text-zinc-50">
             Ace Your Next{" "}
-            <span className="text-gradient animate-gradient bg-[length:200%_200%]">
+            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">
               Interview
             </span>
             <br />
@@ -81,7 +81,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center gap-4 pt-2 sm:flex-row">
             <Link
               href="/register"
-              className="bg-gradient-brand group inline-flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:shadow-xl hover:shadow-blue-600/30 hover:brightness-110"
+              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:shadow-xl hover:shadow-blue-600/30 hover:brightness-110"
             >
               Start Practicing Free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -325,7 +325,7 @@ export default function Home() {
 
       {/* ── CTA ── */}
       <section className="px-4 py-24 sm:py-32">
-        <div className="bg-gradient-brand relative mx-auto max-w-4xl overflow-hidden rounded-3xl px-8 py-16 text-center shadow-2xl sm:px-16">
+        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 px-8 py-16 text-center shadow-2xl sm:px-16">
           {/* Decorative circles */}
           <div className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-white/5" />
@@ -353,11 +353,11 @@ export default function Home() {
       <footer className="border-t border-zinc-200/60 bg-white/50 px-4 py-10 backdrop-blur dark:border-zinc-800/60 dark:bg-zinc-900/30">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="bg-gradient-brand flex h-7 w-7 items-center justify-center rounded-lg">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700">
               <Sparkles className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Interview<span className="text-gradient">Ace</span>
+              Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
             </span>
           </div>
           <div className="flex gap-8 text-sm text-zinc-500 dark:text-zinc-400">

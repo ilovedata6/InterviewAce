@@ -29,7 +29,7 @@ export function InterviewProgressBar({ answered, total }: InterviewProgressBarPr
       </div>
       <div className="relative h-3 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
         <div
-          className="bg-gradient-brand h-full rounded-full transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>

@@ -14,7 +14,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* ── Left decorative panel (hidden on mobile) ── */}
-      <div className="bg-gradient-brand relative hidden w-1/2 overflow-hidden lg:flex lg:flex-col lg:justify-between">
+      <div className="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 lg:flex lg:flex-col lg:justify-between">
         {/* Decorative shapes */}
         <div className="pointer-events-none absolute inset-0">
           <div className="animate-float absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10" />
@@ -74,11 +74,11 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
           {/* Mobile logo (hidden on lg+) */}
           <div className="text-center lg:hidden">
             <Link href={ROUTES.HOME} className="inline-flex items-center gap-2">
-              <div className="bg-gradient-brand flex h-8 w-8 items-center justify-center rounded-lg">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                Interview<span className="text-gradient">Ace</span>
+                Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
               </span>
             </Link>
           </div>

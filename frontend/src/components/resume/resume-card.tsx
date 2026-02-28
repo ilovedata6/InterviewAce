@@ -76,7 +76,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 
   return (
     <Link href={`/resumes/${resume.id}`}>
-      <Card className="group relative h-full overflow-hidden border-zinc-200/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200/50 hover:shadow-lg dark:border-zinc-800/80 dark:hover:border-blue-900/50">
+      <Card className="group relative h-full border-zinc-200/80 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-zinc-800/80 dark:hover:border-blue-800">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-blue-950/20" />
         <CardHeader className="relative pb-3">
           <div className="flex items-start justify-between gap-2">

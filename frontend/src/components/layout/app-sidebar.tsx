@@ -62,11 +62,11 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-zinc-200/70 px-5 dark:border-zinc-800/70">
         <Link href={ROUTES.DASHBOARD} className="flex items-center gap-2.5">
-          <div className="bg-gradient-brand flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 shadow-sm">
             <Sparkles className="h-4 w-4 text-white" />
           </div>
           <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Interview<span className="text-gradient">Ace</span>
+            Interview<span className="bg-gradient-to-r from-blue-600 via-violet-600 to-blue-500 bg-clip-text text-transparent">Ace</span>
           </span>
         </Link>
       </div>

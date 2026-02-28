@@ -179,7 +179,7 @@ export function InterviewConfig({ onSubmit, isLoading }: InterviewConfigProps) {
             />
 
             {/* Submit */}
-            <Button type="submit" className="bg-gradient-brand w-full rounded-xl shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110" size="lg" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/25 hover:brightness-110" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
