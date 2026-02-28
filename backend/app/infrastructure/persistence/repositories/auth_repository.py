@@ -138,7 +138,7 @@ class AuthRepository(IAuthRepository):
 
     async def create_password_reset_token(self, user_id: uuid.UUID) -> str:
         reset_token = str(uuid.uuid4())
-        expires_at = datetime.now(UTC) + timedelta(minutes=15)
+        expires_at = datetime.utcnow() + timedelta(minutes=15)  # naive UTC — matches TIMESTAMP WITHOUT TIME ZONE column
         db_token = PasswordResetToken(
             token=reset_token,
             user_id=user_id,
@@ -152,7 +152,7 @@ class AuthRepository(IAuthRepository):
         result = await self._db.execute(
             select(PasswordResetToken).where(
                 PasswordResetToken.token == token,
-                PasswordResetToken.expires_at >= datetime.now(UTC),
+                PasswordResetToken.expires_at >= datetime.utcnow(),  # naive UTC — matches column
                 PasswordResetToken.used.is_(False),
             )
         )
