@@ -93,6 +93,10 @@ class LoginUseCase:
         if not user.is_email_verified:
             raise AuthenticationError("Please verify your email before logging in")
 
+        # Must be active
+        if not user.is_active:
+            raise AuthenticationError("Your account has been deactivated. Please contact support.")
+
         # Check lockout
         max_attempts = int(os.getenv("MAX_LOGIN_ATTEMPTS", 5))
         recent_failures = await self._auth_repo.count_recent_failed_attempts(
