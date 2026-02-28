@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +40,9 @@ async def admin_stats(
     resumes, and conversion metrics."""
 
     user_count = await db.execute(select(func.count(User.id)))
+    active_count = await db.execute(
+        select(func.count(User.id)).where(User.is_active.is_(True))
+    )
     interview_count = await db.execute(select(func.count(InterviewSession.id)))
     completed_count = await db.execute(
         select(func.count(InterviewSession.id)).where(InterviewSession.completed_at.isnot(None))
@@ -54,10 +58,11 @@ async def admin_stats(
 
     return {
         "total_users": user_count.scalar(),
+        "active_users": active_count.scalar(),
         "total_interviews": interview_count.scalar(),
         "completed_interviews": completed_count.scalar(),
         "total_resumes": resume_count.scalar(),
-        "platform_avg_score": round(float(avg_score), 3) if avg_score else None,
+        "average_score": round(float(avg_score), 3) if avg_score else None,
     }
 
 
@@ -152,6 +157,11 @@ async def admin_deactivate_user(
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if str(user.id) == str(_admin.id):
+        raise HTTPException(
+            status_code=400,
+            detail="You cannot deactivate your own admin account.",
+        )
     user.is_active = False  # type: ignore[assignment]
     await db.commit()
     return {"detail": f"User {user_id} deactivated."}
@@ -175,3 +185,42 @@ async def admin_activate_user(
     user.is_active = True  # type: ignore[assignment]
     await db.commit()
     return {"detail": f"User {user_id} activated."}
+
+
+# ─── Role management ───────────────────────────────────────────────────────
+
+
+class ChangeRoleBody(BaseModel):
+    role: UserRole
+
+
+@router.patch(
+    "/users/{user_id}/role",
+    summary="Change user role (admin only)",
+    status_code=200,
+)
+async def admin_change_role(
+    user_id: UUID,
+    body: ChangeRoleBody,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_role(UserRole.ADMIN)),
+) -> dict[str, str]:
+    """Promote or demote a user's role.
+
+    Admins cannot change their own role to prevent accidental lockout.
+    """
+    if user_id == admin.id:  # type: ignore[comparison-overlap]
+        raise HTTPException(
+            status_code=400,
+            detail="You cannot change your own role.",
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.role = body.role.value  # type: ignore[assignment]
+    await db.commit()
+    return {"detail": f"User {user_id} role changed to {body.role.value}."}
+

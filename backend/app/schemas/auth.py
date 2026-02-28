@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import UUID4, BaseModel, EmailStr
 
+from app.domain.value_objects.enums import UserRole
+
 
 class Token(BaseModel):
     access_token: str
@@ -25,6 +27,7 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: UUID4
     is_active: bool
+    role: str = UserRole.USER.value
     created_at: datetime
     updated_at: datetime
 
