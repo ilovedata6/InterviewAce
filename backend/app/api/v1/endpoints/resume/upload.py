@@ -48,6 +48,9 @@ async def _sync_parse_fallback(file_path: str, resume_id: str) -> None:
 
     logger.info("sync_parse_fallback_started", resume_id=resume_id)
 
+    # Convert string UUID to proper uuid.UUID for SQLAlchemy UUID column comparison
+    resume_uuid = uuid.UUID(resume_id)
+
     engine = create_engine(settings.database_url, pool_pre_ping=True)
     session_factory = sessionmaker(bind=engine)
     db = session_factory()
@@ -59,27 +62,27 @@ async def _sync_parse_fallback(file_path: str, resume_id: str) -> None:
         if not parsed:
             parsed = {}
 
-        result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_id))
+        result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_uuid))
         resume = result.scalars().first()
         if not resume:
             raise ValueError(f"Resume {resume_id} not found in DB")
 
-        resume.status = ResumeStatus.ANALYZED
-        resume.analysis = parsed
-        resume.skills = parsed.get("skills", [])
-        resume.inferred_role = parsed.get("inferred_role")
-        resume.years_of_experience = parsed.get("years_of_experience")
-        resume.confidence_score = parsed.get("confidence_score")
-        resume.processing_time = parsed.get("processing_time")
-        resume.title = parsed.get("name") or os.path.basename(file_path)
-        resume.description = parsed.get("summary")
+        resume.status = ResumeStatus.ANALYZED  # type: ignore[assignment]
+        resume.analysis = parsed  # type: ignore[assignment]
+        resume.skills = parsed.get("skills", [])  # type: ignore[assignment]
+        resume.inferred_role = parsed.get("inferred_role")  # type: ignore[assignment]
+        resume.years_of_experience = int(parsed["years_of_experience"]) if parsed.get("years_of_experience") is not None else None  # type: ignore[assignment]
+        resume.confidence_score = float(parsed["confidence_score"]) if parsed.get("confidence_score") is not None else None  # type: ignore[assignment]
+        resume.processing_time = float(parsed["processing_time"]) if parsed.get("processing_time") is not None else None  # type: ignore[assignment]
+        resume.title = parsed.get("name") or os.path.basename(file_path)  # type: ignore[assignment]
+        resume.description = parsed.get("summary")  # type: ignore[assignment]
         db.commit()
         logger.info("sync_parse_fallback_completed", resume_id=resume_id)
 
     except Exception as exc:
         logger.error("sync_parse_fallback_failed", resume_id=resume_id, error=str(exc))
         try:
-            result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_id))
+            result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_uuid))
             resume = result.scalars().first()
             if resume:
                 resume.status = ResumeStatus.ERROR

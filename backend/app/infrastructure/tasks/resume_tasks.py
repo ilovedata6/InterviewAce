@@ -8,6 +8,7 @@ can return ``202 Accepted`` immediately.
 from __future__ import annotations
 
 import os
+import uuid
 
 import structlog
 
@@ -67,6 +68,9 @@ def parse_resume_task(self, file_path: str, user_id: str, resume_id: str):
         file_path=file_path,
     )
 
+    # Convert string UUID to proper uuid.UUID for SQLAlchemy UUID column comparison
+    resume_uuid = uuid.UUID(resume_id)
+
     db = _get_sync_session()
     try:
         # 1. Text extraction (synchronous — CPU-bound, no async needed)
@@ -83,20 +87,20 @@ def parse_resume_task(self, file_path: str, user_id: str, resume_id: str):
         _validate_mandatory(parsed, fields=("experience", "education", "skills"))
 
         # 3. Update the existing Resume row
-        result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_id))
+        result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_uuid))
         resume = result.scalars().first()
         if not resume:
             raise ValueError(f"Resume {resume_id} not found in DB")
 
-        resume.status = ResumeStatus.ANALYZED
-        resume.analysis = parsed
-        resume.skills = parsed.get("skills", [])
-        resume.inferred_role = parsed.get("inferred_role")
-        resume.years_of_experience = parsed.get("years_of_experience")
-        resume.confidence_score = parsed.get("confidence_score")
-        resume.processing_time = parsed.get("processing_time")
-        resume.title = parsed.get("name") or os.path.basename(file_path)
-        resume.description = parsed.get("summary")
+        resume.status = ResumeStatus.ANALYZED  # type: ignore[assignment]
+        resume.analysis = parsed  # type: ignore[assignment]
+        resume.skills = parsed.get("skills", [])  # type: ignore[assignment]
+        resume.inferred_role = parsed.get("inferred_role")  # type: ignore[assignment]
+        resume.years_of_experience = int(parsed["years_of_experience"]) if parsed.get("years_of_experience") is not None else None  # type: ignore[assignment]
+        resume.confidence_score = float(parsed["confidence_score"]) if parsed.get("confidence_score") is not None else None  # type: ignore[assignment]
+        resume.processing_time = float(parsed["processing_time"]) if parsed.get("processing_time") is not None else None  # type: ignore[assignment]
+        resume.title = parsed.get("name") or os.path.basename(file_path)  # type: ignore[assignment]
+        resume.description = parsed.get("summary")  # type: ignore[assignment]
 
         db.commit()
 
@@ -111,10 +115,10 @@ def parse_resume_task(self, file_path: str, user_id: str, resume_id: str):
         )
         # Mark resume as ERROR in DB
         try:
-            result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_id))
+            result = db.execute(select(ResumeModel).where(ResumeModel.id == resume_uuid))
             resume = result.scalars().first()
             if resume:
-                resume.status = ResumeStatus.ERROR
+                resume.status = ResumeStatus.ERROR  # type: ignore[assignment]
                 db.commit()
         except Exception:
             db.rollback()
