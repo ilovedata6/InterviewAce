@@ -121,7 +121,7 @@ class Settings(BaseSettings):
 
     # ── LLM — OpenAI (Primary) ────────────────────────────────────────────
     OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-5.2-2025-12-11"
+    OPENAI_MODEL: str = "gpt-5-2025-08-07"
 
     # ── LLM — Gemini (Fallback) ───────────────────────────────────────────
     GEMINI_API_KEY: str = ""
@@ -129,8 +129,8 @@ class Settings(BaseSettings):
 
     # ── LLM — Provider chain ──────────────────────────────────────────────
     LLM_PRIMARY_PROVIDER: str = "openai"  # "openai" | "gemini"
-    LLM_TIMEOUT: int = 60  # seconds per LLM call
-    LLM_MAX_RETRIES: int = 2
+    LLM_TIMEOUT: int = 180  # seconds per LLM call (GPT-5 can be slow)
+    LLM_MAX_RETRIES: int = 3
 
     # ── Legacy alias (used by existing services until migration) ──────────
     @property

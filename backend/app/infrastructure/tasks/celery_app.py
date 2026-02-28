@@ -3,7 +3,11 @@ Celery application configuration.
 
 Start the worker with::
 
+    # Linux / macOS (default prefork pool)
     celery -A app.infrastructure.tasks.celery_app worker --loglevel=info
+
+    # Windows (prefork is broken — use solo or threads pool)
+    celery -A app.infrastructure.tasks.celery_app worker --loglevel=info --pool=solo
 
 Start the beat scheduler (optional — for periodic cleanup)::
 

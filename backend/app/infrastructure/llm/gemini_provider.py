@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from typing import Any
 
 import structlog
@@ -18,6 +19,10 @@ from app.domain.exceptions import LLMProviderError
 from app.domain.interfaces.llm_provider import ILLMProvider
 
 logger = structlog.get_logger(__name__)
+
+# Retry settings for Gemini 429 rate-limit errors
+_RATE_LIMIT_RETRIES = 2
+_RATE_LIMIT_BACKOFF_BASE = 15  # seconds
 
 
 def _clean_gemini_json(raw: str) -> str:
@@ -40,6 +45,33 @@ class GeminiProvider(ILLMProvider):
         logger.info("gemini_provider_initialized", model=model)
 
     # ------------------------------------------------------------------
+    # Retry wrapper for rate-limited requests
+    # ------------------------------------------------------------------
+
+    def _call_with_rate_limit_retry(self, method_name: str, **generate_kwargs) -> Any:
+        """Call generate_content with retry on 429 RESOURCE_EXHAUSTED."""
+        last_exc: Exception | None = None
+        for attempt in range(1, _RATE_LIMIT_RETRIES + 2):
+            try:
+                return self._client.models.generate_content(**generate_kwargs)
+            except Exception as exc:
+                exc_str = str(exc)
+                is_rate_limit = "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str
+                if is_rate_limit and attempt <= _RATE_LIMIT_RETRIES:
+                    wait = _RATE_LIMIT_BACKOFF_BASE * attempt
+                    logger.warning(
+                        "gemini_rate_limit_retry",
+                        method=method_name,
+                        attempt=attempt,
+                        wait_seconds=wait,
+                    )
+                    time.sleep(wait)
+                    last_exc = exc
+                else:
+                    raise
+        raise last_exc  # type: ignore[misc]
+
+    # ------------------------------------------------------------------
     # ILLMProvider interface
     # ------------------------------------------------------------------
 
@@ -55,7 +87,8 @@ class GeminiProvider(ILLMProvider):
         """
         try:
             full_prompt = f"{prompts['system_prompt']}\n\n{prompts['user_prompt']}"
-            response = self._client.models.generate_content(
+            response = self._call_with_rate_limit_retry(
+                "generate_questions",
                 model=self._model,
                 contents=[{"role": "user", "parts": [{"text": full_prompt}]}],
             )
@@ -91,7 +124,8 @@ class GeminiProvider(ILLMProvider):
         """Generate interview feedback/evaluation."""
         try:
             full_prompt = f"{prompts['system_prompt']}\n\n{prompts['user_prompt']}"
-            response = self._client.models.generate_content(
+            response = self._call_with_rate_limit_retry(
+                "generate_feedback",
                 model=self._model,
                 contents=[{"role": "user", "parts": [{"text": full_prompt}]}],
             )
@@ -114,7 +148,8 @@ class GeminiProvider(ILLMProvider):
     def generate_completion(self, prompt: str) -> str:
         """Generate a free-form text completion."""
         try:
-            response = self._client.models.generate_content(
+            response = self._call_with_rate_limit_retry(
+                "generate_completion",
                 model=self._model,
                 contents=[prompt],
             )
@@ -155,7 +190,8 @@ class GeminiProvider(ILLMProvider):
         )
 
         try:
-            response = self._client.models.generate_content(
+            response = self._call_with_rate_limit_retry(
+                "parse_resume",
                 model=self._model,
                 contents=[prompt],
             )

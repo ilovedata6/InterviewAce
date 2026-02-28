@@ -53,7 +53,10 @@ async def start_interview_session(
         ) from e
     except InterviewError as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate questions",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "AI question generation temporarily unavailable. "
+                "Please try again in a few seconds."
+            ),
         ) from e
     return session

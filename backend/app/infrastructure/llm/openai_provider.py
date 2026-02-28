@@ -8,6 +8,7 @@ for structured JSON output (no markdown fence cleaning needed).
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import structlog
@@ -18,6 +19,10 @@ from app.domain.interfaces.llm_provider import ILLMProvider
 
 logger = structlog.get_logger(__name__)
 
+# GPT-5 models can be slow — retry on timeout with exponential back-off
+_TIMEOUT_RETRIES = 2
+_TIMEOUT_BACKOFF_BASE = 5  # seconds
+
 
 class OpenAIProvider(ILLMProvider):
     """Concrete ILLMProvider backed by the OpenAI API."""
@@ -25,9 +30,9 @@ class OpenAIProvider(ILLMProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-5.2-2025-12-11",
-        timeout: int = 60,
-        max_retries: int = 2,
+        model: str = "gpt-5-2025-08-07",
+        timeout: int = 180,
+        max_retries: int = 3,
     ) -> None:
         if not api_key:
             raise ValueError("OPENAI_API_KEY is required for OpenAIProvider")
@@ -37,7 +42,32 @@ class OpenAIProvider(ILLMProvider):
             timeout=timeout,
             max_retries=max_retries,
         )
-        logger.info("openai_provider_initialized", model=model)
+        logger.info("openai_provider_initialized", model=model, timeout=timeout)
+
+    # ------------------------------------------------------------------
+    # Retry wrapper for timeout-prone GPT-5 calls
+    # ------------------------------------------------------------------
+
+    def _call_with_timeout_retry(self, method_name: str, **create_kwargs) -> Any:
+        """Call chat.completions.create with retry on APITimeoutError."""
+        last_exc: Exception | None = None
+        for attempt in range(1, _TIMEOUT_RETRIES + 2):  # 1-based, total = retries+1
+            try:
+                return self._client.chat.completions.create(**create_kwargs)
+            except APITimeoutError as exc:
+                last_exc = exc
+                if attempt <= _TIMEOUT_RETRIES:
+                    wait = _TIMEOUT_BACKOFF_BASE * attempt
+                    logger.warning(
+                        "openai_timeout_retry",
+                        method=method_name,
+                        attempt=attempt,
+                        wait_seconds=wait,
+                    )
+                    time.sleep(wait)
+                else:
+                    raise
+        raise last_exc  # unreachable, but keeps mypy happy
 
     # ------------------------------------------------------------------
     # ILLMProvider interface
@@ -55,14 +85,14 @@ class OpenAIProvider(ILLMProvider):
         Returns a list of question strings.
         """
         try:
-            response = self._client.chat.completions.create(
+            response = self._call_with_timeout_retry(
+                "generate_questions",
                 model=self._model,
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": prompts["system_prompt"]},
                     {"role": "user", "content": prompts["user_prompt"]},
                 ],
-                temperature=0.7,
             )
             raw = response.choices[0].message.content or ""
             data = json.loads(raw)
@@ -97,14 +127,14 @@ class OpenAIProvider(ILLMProvider):
         Generate interview feedback/evaluation using OpenAI JSON mode.
         """
         try:
-            response = self._client.chat.completions.create(
+            response = self._call_with_timeout_retry(
+                "generate_feedback",
                 model=self._model,
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": prompts["system_prompt"]},
                     {"role": "user", "content": prompts["user_prompt"]},
                 ],
-                temperature=0.5,
             )
             raw = response.choices[0].message.content or ""
             result = json.loads(raw)
@@ -126,10 +156,10 @@ class OpenAIProvider(ILLMProvider):
         Generate a free-form text completion.
         """
         try:
-            response = self._client.chat.completions.create(
+            response = self._call_with_timeout_retry(
+                "generate_completion",
                 model=self._model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
             )
             text = response.choices[0].message.content or ""
             logger.info("openai_completion_generated", model=self._model)
@@ -165,14 +195,14 @@ class OpenAIProvider(ILLMProvider):
             "If a field is missing, use null or empty array."
         )
         try:
-            response = self._client.chat.completions.create(
+            response = self._call_with_timeout_retry(
+                "parse_resume",
                 model=self._model,
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"RESUME TEXT:\n{text}"},
                 ],
-                temperature=0.3,
             )
             raw = response.choices[0].message.content or ""
             result = json.loads(raw)

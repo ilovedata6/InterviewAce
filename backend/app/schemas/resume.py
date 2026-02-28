@@ -93,6 +93,13 @@ class ResumeInDB(ResumeBase):
     skills: list[str] = Field(
         default_factory=list, description="List of skills extracted from the resume"
     )
+
+    @field_validator("skills", mode="before")
+    @classmethod
+    def skills_none_to_list(cls, v):
+        """Coerce NULL/None from the database into an empty list."""
+        return v if v is not None else []
+
     created_at: datetime
     updated_at: datetime
     analysis: dict[str, Any] | None = None
