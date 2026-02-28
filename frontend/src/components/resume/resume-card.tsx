@@ -76,24 +76,26 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 
   return (
     <Link href={`/resumes/${resume.id}`}>
-      <Card className="group relative h-full border-zinc-200/80 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-zinc-800/80 dark:hover:border-blue-800">
+      <Card className="group relative h-full overflow-hidden border-zinc-200/80 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-zinc-800/80 dark:hover:border-blue-800">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-blue-950/20" />
         <CardHeader className="relative pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:bg-blue-950/40">
-                <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="group-hover:text-primary truncate text-sm font-semibold transition-colors">
-                  {resume.title || resume.file_name}
-                </h3>
-                <p className="text-muted-foreground truncate text-xs">{resume.file_name}</p>
-              </div>
+          {/* Row 1: icon + filename */}
+          <div className="flex items-center gap-2.5">
+            <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:bg-blue-950/40">
+              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <Badge variant={config.variant} className="shrink-0 text-xs">
+            <div className="min-w-0 flex-1">
+              <h3 className="group-hover:text-primary truncate text-sm font-semibold transition-colors">
+                {resume.title || resume.file_name}
+              </h3>
+              <p className="text-muted-foreground truncate text-xs">{resume.file_name}</p>
+            </div>
+          </div>
+          {/* Row 2: status badge on its own line — never overflows */}
+          <div className="mt-2">
+            <Badge variant={config.variant} className="inline-flex items-center gap-1 text-xs">
               <StatusIcon
-                className={`mr-1 h-3 w-3 ${config.color} ${"animate" in config && config.animate ? "animate-spin" : ""}`}
+                className={`h-3 w-3 ${config.color} ${"animate" in config && config.animate ? "animate-spin" : ""}`}
               />
               {config.label}
             </Badge>
