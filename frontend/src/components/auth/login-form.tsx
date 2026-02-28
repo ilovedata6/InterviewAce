@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zod-resolver";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ interface LoginFormProps {
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const { login } = useAuth();
 
   const form = useForm<LoginValues>({
@@ -53,8 +55,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     try {
       await login(values);
       toast.success("Welcome back!");
-      // Use window.location for full page navigation to trigger middleware
-      window.location.href = callbackUrl || ROUTES.DASHBOARD;
+      router.push(callbackUrl || ROUTES.DASHBOARD);
     } catch (error) {
       if (error instanceof ApiClientError) {
         toast.error(typeof error.detail === "string" ? error.detail : "Invalid credentials");

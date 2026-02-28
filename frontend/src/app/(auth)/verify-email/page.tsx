@@ -12,15 +12,17 @@ import { Suspense } from "react";
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+
+  // Derive initial state from token presence (no setState in effect)
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    token ? "loading" : "error",
+  );
+  const [message, setMessage] = useState(
+    token ? "" : "No verification token found. Please check your email link.",
+  );
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("No verification token found. Please check your email link.");
-      return;
-    }
+    if (!token) return;
 
     apiClient
       .post(API_ROUTES.AUTH.VERIFY_EMAIL, { token })
