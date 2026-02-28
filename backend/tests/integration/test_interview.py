@@ -10,17 +10,12 @@ API calls are made.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import patch
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.value_objects.enums import FileType, ResumeStatus
 from app.models.resume import Resume
-from app.models.interview import InterviewSession, InterviewQuestion
-from app.domain.value_objects.enums import ResumeStatus, FileType
-
 
 API = "/api/v1/interview"
 
@@ -28,6 +23,7 @@ API = "/api/v1/interview"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 async def _create_resume(db_session: AsyncSession, user_id) -> Resume:
     """Insert a minimal analysed resume for the test user."""
@@ -43,9 +39,7 @@ async def _create_resume(db_session: AsyncSession, user_id) -> Resume:
         inferred_role="Software Engineer",
         status=ResumeStatus.ANALYZED,
         analysis={
-            "experience": [
-                {"job_title": "SWE", "company": "Test", "description": "Built things"}
-            ],
+            "experience": [{"job_title": "SWE", "company": "Test", "description": "Built things"}],
             "education": [{"degree": "BSc"}],
             "skills": ["Python"],
         },
@@ -62,6 +56,7 @@ async def _create_resume(db_session: AsyncSession, user_id) -> Resume:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestStartInterview:
     async def test_start_without_resume_returns_404(
@@ -90,17 +85,21 @@ class TestStartInterview:
         mock_llm_provider,
     ):
         """Start an interview session with a resume and mock LLM."""
+        from app.api.deps import get_llm
+        from main import app
+
         resume = await _create_resume(db_session, test_user.id)
 
-        with patch(
-            "app.services.interview_orchestrator.get_llm_provider",
-            return_value=mock_llm_provider,
-        ):
+        # Override the FastAPI DI dependency so no real LLM call is made.
+        app.dependency_overrides[get_llm] = lambda: mock_llm_provider
+        try:
             resp = await client.post(
                 f"{API}/start",
                 json={"resume_id": str(resume.id)},
                 headers=auth_headers,
             )
+        finally:
+            del app.dependency_overrides[get_llm]
 
         assert resp.status_code == 200
         data = resp.json()
@@ -109,20 +108,14 @@ class TestStartInterview:
 
 
 class TestNextQuestion:
-    async def test_next_question_invalid_session(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_next_question_invalid_session(self, client: AsyncClient, auth_headers):
         fake_id = str(uuid.uuid4())
-        resp = await client.get(
-            f"{API}/{fake_id}/next", headers=auth_headers
-        )
+        resp = await client.get(f"{API}/{fake_id}/next", headers=auth_headers)
         assert resp.status_code == 404
 
 
 class TestAnswerQuestion:
-    async def test_answer_invalid_session(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_answer_invalid_session(self, client: AsyncClient, auth_headers):
         fake_session = str(uuid.uuid4())
         fake_question = str(uuid.uuid4())
         resp = await client.post(
@@ -134,11 +127,7 @@ class TestAnswerQuestion:
 
 
 class TestCompleteInterview:
-    async def test_complete_invalid_session(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_complete_invalid_session(self, client: AsyncClient, auth_headers):
         fake_id = str(uuid.uuid4())
-        resp = await client.post(
-            f"{API}/{fake_id}/complete", headers=auth_headers
-        )
+        resp = await client.post(f"{API}/{fake_id}/complete", headers=auth_headers)
         assert resp.status_code == 404
