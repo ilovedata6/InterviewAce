@@ -179,3 +179,4 @@ cython_debug/
 .helper
 
 backend/tests/*
+Docs/
